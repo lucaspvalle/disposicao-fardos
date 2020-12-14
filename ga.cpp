@@ -5,6 +5,7 @@ Funções de apoio
 */
 int ga::categoria(string fardo) {
     //classificacao dos fardos de acordo com a procedencia
+
     int id, cumsum = 0; //soma acumulada
 
     fardo.pop_back(); //retirar o ultimo caracter da string (o "b" de "123b", por ex.)
@@ -20,35 +21,36 @@ int ga::categoria(string fardo) {
 }
 
 vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa) {
+    //suporte de preenchimento de fardos para operador OX
 
-    int i = 0, pos = 0;
+    int i = 0, pos = 0; //iteradores
     string variantes = { "abc" };
 
-    while (i != matrizTam) {
+    while (i != matrizTam) { //enquanto nao percorrer todo o individuo
 
-        if (filho[i].empty()) {
+        if (filho[i].empty()) { //se a posicao estiver vazia, 
 
-            if (inputFardos[categoria(mapa[pos])].tamanho == "grande") {
+            if (inputFardos[categoria(mapa[pos])].tamanho == "grande") { //caso os fardos sejam grandes,
 
-                mapa[pos].pop_back();
-                for (int d = 0; d < 3; d++) {
+                mapa[pos].pop_back(); //retirar o identificador do fardo (o "b" de "123b")
+                for (int d = 0; d < 3; d++) { //iterar 3 posicoes verticais para preenchimento de fardos grandes
 
-                    int var = i + d * linhas;
-                    filho[var] = mapa[pos] + variantes[d];
+                    int var = i + d * linhas; //atualizando posicao a ser preenchida (a mesma linha nas colunas posteriores)
+                    filho[var] = mapa[pos] + variantes[d]; //preenchendo
                 }
             }
-            else {
+            else { //caso os fardos sejam pequenos,
 
-                mapa[pos].pop_back();
-                for (int d = 0; d < 2; d++) {
+                mapa[pos].pop_back(); //retirar o identificador do fardo (o "b" de "123b")
+                for (int d = 0; d < 2; d++) { //iterar 2 posicoes horizontais para preenchimento de fardos grandes
 
-                    int var = i + d;
-                    filho[var] = mapa[pos] + variantes[d];
+                    int var = i + d; //atualizando posicao a ser preenchida (a linha ao lado)
+                    filho[var] = mapa[pos] + variantes[d]; //preenchendo
                 }
             }
-            mapa.erase(mapa.begin() + pos);
+            mapa.erase(mapa.begin() + pos); //apagando o fardo que foi alocado da lista de preenchimento
         }
-        i++;
+        i++; //proxima linha
     }
     return filho;
 }
@@ -213,6 +215,7 @@ string2d ga::cruzamento() {
             }
         }
 
+        //preenchendo os espacos vazios de fardos que estavam duplicados
         filho = popularFardos(filho, mapaFilho);
         filha = popularFardos(filha, mapaFilha);
 
@@ -234,27 +237,28 @@ string2d ga::mutacao() {
 
     char variantes[4] = { "abc" };
 
-    for (int chr = 0; chr < populacaoTam; chr++) {
-        for (int i = 0; i < matrizTam; i++) {
+    for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
+        for (int i = 0; i < matrizTam; i++) { //iterando todas as posicoes do individuo
 
             double num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
             if (num_aleatorio <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
 
                 int parada = 1; //criterio de parada para o loop
-                while (parada != 0) { //continuar iterando ate ocorrer uma troca de fardos na matriz
+                while (parada) { //continuar iterando ate ocorrer uma troca de fardos na matriz
 
                     int fardoSwap = rand() % matrizTam; //escolhendo um fardo aleatorio para troca
-                    string tamSwap = inputFardos[categoria(populacao[chr][fardoSwap])].tamanho;
-                    string tamLoc = inputFardos[categoria(populacao[chr][i])].tamanho;
+                    string tamSwap = inputFardos[categoria(populacao[chr][fardoSwap])].tamanho; //tamanho (pequeno/grande) do fardo para troca
+                    string tamLoc = inputFardos[categoria(populacao[chr][i])].tamanho; //tamanho (pequeno/grande) do fardo original
 
-                    if (tamSwap == tamLoc) {
+                    if (tamSwap == tamLoc) { //se os tamanhos forem identicos,
 
-                        char letraLoc = populacao[chr][i].back(), letraSwap = populacao[chr][fardoSwap].back(); //pegando o indice de variacao dos fardos (a, b ou c)
+                        //ajustando o fardo para trocas sempre entre posicoes a-a, b-b e c-c
+                        char letraLoc = populacao[chr][i].back(), letraSwap = populacao[chr][fardoSwap].back();
                         int ajusteLoc = (int)letraLoc, ajusteSwap = (int)letraSwap;
 
                         if (tamSwap == "pequeno") { //se forem fardos pequenos,
 
-                            for (int c = 0; c < 2; c++) {
+                            for (int c = 0; c < 2; c++) { //variando as 2 posicoes que fardos pequenos ocupam
                                 
                                 int varSwap = fardoSwap + (int)variantes[c] - ajusteSwap;
                                 int varLoc = i + (int)variantes[c] - ajusteLoc;
@@ -264,7 +268,7 @@ string2d ga::mutacao() {
 
                         else if (tamSwap == "grande") { //grande
 
-                            for (int c = 0; c < 3; c++) { //variando quantas posicoes fardos grandes ocupam na matriz
+                            for (int c = 0; c < 3; c++) { //variando as 3 posicoes que fardos grandes ocupam
 
                                 int varSwap = fardoSwap + ((int)variantes[c] - ajusteSwap) * linhas;
                                 int varLoc = i + ((int)variantes[c] - ajusteLoc) * linhas;
