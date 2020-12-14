@@ -1,0 +1,474 @@
+#include <iostream>
+#include <fstream>
+#include <algorithm> //std::shuffle, std::min_element
+#include <Windows.h> //MessageBoxA
+#include <random> //std::random_engine_default, std::rand, std::srand
+#include <vector>
+#include <string>
+using namespace std;
+
+typedef struct {
+    //armazenamento de dados da planilha
+    int box, qtdade, tamanho;
+    float peso;
+    string procedencia;
+} planilha;
+typedef struct {
+    string mapaPai, mapaMae;
+} relacoes;
+typedef vector<vector<vector<string>>> string3d;
+typedef vector<vector<string>> string2d;
+
+vector<planilha> dados;
+int pequenos, grandes, colunas;
+
+//parametros
+const int tamanho_populacao = 100, tamanho_geracoes = 10, criterio_peso = 220, linhas = 4;
+const double prob_mutacao = 0.05;
+
+//funcoes de apoio
+int clf(string fardo) {
+    //funcao para classificacao dos fardos de acordo com a procedencia
+    int id, cumsum = 0; //soma acumulada
+
+    fardo.pop_back(); //retirar o ultimo caracter da string (o "b" de "123b", por ex.)
+    id = stoi(fardo); //converter a string "123" para int 123 (por ex.)
+
+    for (int tipo = 0; tipo < dados.size(); tipo++) { //iterando a struct
+        cumsum += dados[tipo].qtdade; //acumulando a soma
+
+        if (id <= cumsum)
+            return tipo; //retornando o indice para identificacao do fardo
+    }
+    return 100;
+}
+
+int clf_b(string fardo) {
+    //funcao para classificacao dos fardos de acordo com a procedencia
+    int id, cumsum = 0; //soma acumulada
+
+    id = stoi(fardo); //converter a string "123" para int 123 (por ex.)
+
+    for (int tipo = 0; tipo < dados.size(); tipo++) { //iterando a struct
+        cumsum += dados[tipo].qtdade; //acumulando a soma
+
+        if (id <= cumsum)
+            return tipo; //retornando o indice para identificacao do fardo
+    }
+    return 100;
+}
+
+void mapa(string3d individuo, vector<int> fitval) {
+    //funcao para escrita do mapa de disposicao de fardos
+
+    ofstream arq;
+    int tipo, k = min_element(fitval.begin(), fitval.end()) - fitval.begin(); //indice do individuo com menor valor fitness
+
+    arq.open("temp.csv", ios::trunc); //inicializando arquivo csv a ser escrito
+if (arq.is_open()) { //apenas escrever se o arquivo estiver aberto
+
+    for (int j = 0; j < colunas; j++) {
+        for (int i = 0; i < linhas; i++) {
+
+            if (!individuo[k][j][i].empty()) { //se o espaco nao estiver vazio,
+
+                tipo = clf(individuo[k][j][i]); //classificando o fardo
+                if (individuo[k][j][i].back() == 'a') //apenas escrever no arquivo o primeiro fardo identificado
+                    arq << dados[tipo].procedencia << " (" << dados[tipo].box << "),"; //escrevendo a procedencia e o box de localizacao do fardo
+
+                else //se for a identificacao de referencia para a ocupacao do tamanho do fardo na matriz, ignora
+                    arq << dados[tipo].tamanho << ',';
+            }
+        }
+        arq << endl; //pulando linha no arquivo para ser consistente com as linhas da matriz
+    }
+    arq.close(); //encerrando o arquivo
+}
+}
+
+void ler_planilha(int clf_peso) {
+    //funcao para receber inputs do problema
+
+    fstream arq;
+    string box, procedencia, peso, qtdade;
+
+    arq.open("temp.csv", ios::in); //inicializando arquivo csv a ser lido
+
+    if (arq.is_open()) { //apenas ler se o arquivo estiver aberto
+        int j = 0;
+
+        //modelo do arquivo: "box,procedencia,peso,qtdade\n"
+        while (getline(arq, box, ',')) { //obtendo a primeira informacao do arquivo (id do box)
+            dados.push_back(planilha());
+
+            dados[j].box = stoi(box);
+
+            getline(arq, procedencia, ','); //obtendo a proxima informacao do arquivo (procedencia do fardo)
+            dados[j].procedencia = procedencia;
+
+            getline(arq, peso, ',');
+            dados[j].peso = stof(peso);
+
+            getline(arq, qtdade);
+            dados[j].qtdade = stoi(qtdade);
+
+            if (dados[j].peso < clf_peso) { //caso o peso do fardo seja menor, ele é classificado como pequeno
+                pequenos += dados[j].qtdade;
+                dados[j].tamanho = 1;
+            }
+            else { //caso contrario, é classificado como grande
+                grandes += dados[j].qtdade;
+                dados[j].tamanho = 2;
+            }
+
+            j++; //iterando o contador de fardos para armazenar no proximo espaco do struct
+        }
+        arq.close(); //encerrando o arquivo
+    }
+    else {
+        MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
+        exit(1);
+    }
+}
+
+bool checarDuplicatas(string2d corte, string troca) {
+
+    for (int x = 0; x < corte.size(); x++) {
+        for (int y = 0; y < linhas; y++) {
+
+            if (corte[x][y] == troca)
+                return true;
+        }
+    }
+    return false;
+}
+
+string2d popularFilho(string2d filho, vector<string> unicos) {
+
+    int i = 0, j = 0, pos = 0;
+    string variantes = { "abc" };
+
+    while (i != colunas) {
+
+        if (filho[i][j].empty()) {
+
+            if (dados[clf_b(unicos[pos])].tamanho == 2) {
+
+                if (filho[i + 1][j].empty() && filho[i + 2][j].empty()) {
+
+                    for (int d = 0; d < 3; d++) {
+
+                        int var = i + d;
+                        filho[var][j] = unicos[pos] + variantes[d];
+                    }
+                    unicos.erase(unicos.begin() + pos);
+                    j++;
+                }
+            }
+
+            else {
+
+                if (filho[i][j + 1].empty()) {
+
+                    for (int d = 0; d < 2; d++) {
+
+                        int var = j + d;
+                        filho[i][var] = unicos[pos] + variantes[d];
+                    }
+                    unicos.erase(unicos.begin() + pos);
+                    j++;
+                }
+            }
+        }
+        else {
+            j++;
+        }
+
+        if (j == linhas)
+            i++, j = 0;
+
+        if (pos == unicos.size())
+            return filho;
+    }
+    return filho;
+}
+
+//funcoes do algoritmo
+string3d init() {
+    //funcao de inicializacao
+    string3d populacao; //cromossomo para a populacao de individuos
+    string variantes = { "abc" }; //variacoes de fardos de acordo com seu tamanho
+
+    const int total = grandes + pequenos; //quantidade de fardos a serem misturados
+    vector<int> fardos; //vetor com a identificacao de fardos a serem inicializados
+
+    for (int n = 1; n <= total; n++)
+        fardos.push_back(n); //inicializando o vetor com o id de cada fardo
+
+    //inicializando o vetor <string> de 3 dimensoes para a populacao
+    for (int x = 0; x < tamanho_populacao; x++) { //dimensao 1: individuos
+        populacao.push_back(vector<vector<string>>());
+
+        for (int y = 0; y < colunas; y++) { //dimensao 2: colunas da matriz
+            populacao[x].push_back(vector<string>());
+
+            for (int z = 0; z < linhas; z++) { //dimensao 3: linhas da matriz com valor vazio
+                populacao[x][y].push_back("");
+            }
+        }
+    }
+
+    for (int k = 0; k < tamanho_populacao; k++) { //iterando os individuos
+        int id = 0; //contador para auxiliar parada
+
+        shuffle(fardos.begin(), fardos.begin() + grandes, default_random_engine(time(NULL))); //misturando a ordem de fardos grandes a serem inicializados
+        shuffle(fardos.begin() + grandes + 1, fardos.end(), default_random_engine(time(NULL))); //misturando a ordem de fardos pequenos a serem inicializados
+
+        for (int j = 0; j < colunas; j++) {
+            for (int i = 0; i < linhas; i++) {
+
+                if (populacao[k][j][i].empty()) { //verificando se a posicao está vazia para preenchimento
+
+                    if (id < grandes) { //verificando se deve ser inicializado um fardo de tamanho grande
+
+                        for (int d = 0; d < 3; d++) { //iterando as variacoes do identificador de fardo
+                            int var = j + d;
+                            populacao[k][var][i] = to_string(fardos[id]) + variantes[d]; //adicionando o identificador "123b" (por ex.) na posicao i,j+d da matriz
+                        }
+                        id++; //atualizando o fardo a ser inicializado
+                    }
+
+                    else if (id >= grandes && id < pequenos + grandes) { //verificando se deve ser inicializado um fardo de tamanho pequeno
+
+                        for (int d = 0; d < 2; d++) { //iterando as variacoes do identificador de fardo
+                            int var = i + d;
+                            populacao[k][j][var] = to_string(fardos[id]) + variantes[d]; //adicionando o identificador "123b" (por ex.) na posicao i+d,j da matriz
+                        }
+                        id++; //atualizando o fardo a ser inicializado
+                    }
+                }
+            }
+        }
+    }
+    return populacao; //retornando o individuo inicializado
+}
+
+vector<int> fitness(string3d populacao) {
+    //funcao para calculo do valor fitness da populacao
+
+    vector<int> fitval(tamanho_populacao, 0); //inicializando o valor fitness em 0 para cada individuo
+
+    for (int k = 0; k < tamanho_populacao; k++) {
+        for (int j = 0; j < colunas; j++) {
+            for (int i = 0; i < linhas; i++) {
+
+                for (int d = 0; d < linhas - i; d++) { //iterando de acordo com a distancia do ponto i até o fim da linha de abertura
+                    int var = i + d;
+
+                    if (dados[clf(populacao[k][j][i])].box == dados[clf(populacao[k][j][var])].box) //se ambos fardos forem categorizados de forma similar, penalizar de acordo com a distancia
+                        fitval[k] += d;
+                }
+            }
+        }
+    }
+    return fitval; //retornando os valores fitness
+}
+
+string3d selecao(string3d populacao, vector<int> fitval) {
+    //funcao de selecao de individuos para cruzamento
+
+    string3d selecionados; //vetor com os individuos selecionados
+    int idx = 0; //iterador
+
+    while (selecionados.size() != populacao.size()) { //iterar enquanto a qtdade de selecionados for diferente do tamanho da populacao
+
+        int vencedor = rand() % tamanho_populacao, desafiante = rand() % tamanho_populacao; //gerando dois individuos aleatorios
+
+        while (vencedor == desafiante) //caso os individuos sejam os mesmos, gerar um novo
+            desafiante = rand() % tamanho_populacao;
+
+        if (fitval[desafiante] >= fitval[vencedor]) //o vencedor é quem tiver menor valor fitness
+            vencedor = desafiante;
+
+        selecionados.push_back(vector<vector<string>>()); //criando vetor para armazenar o vencedor
+        selecionados[idx] = populacao[vencedor]; //atribuindo o vencedor ao vetor
+
+        idx++; //iterando
+    }
+
+    return selecionados;
+}
+
+string3d cruzamento(string3d populacao) {
+    //funcao de cruzamento PMX
+
+    string3d linhagem; //filhos dos pais selecionados
+    int idx = 0; //iterador
+
+    while (linhagem.size() != populacao.size()) { //iterar enquanto a linhagem nao for do mesmo tamanho da populacao
+
+        vector<string> unicosFilho, unicosFilha;
+
+        int pai = rand() % tamanho_populacao, mae = rand() % tamanho_populacao; //gerando dois individuos aleatorios
+        int colunaInf = rand() % colunas, colunaSup = rand() % colunas; //gerando dois pontos de corte aleatorios
+
+        while (pai == mae) //caso os individuos sejam os mesmos, gerar um novo
+            mae = rand() % tamanho_populacao;
+
+        while (colunaSup == colunaInf) //caso as colunas sejam as mesmas, gerar uma nova
+            colunaSup = rand() % colunas;
+
+        if (colunaSup < colunaInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
+            swap(colunaInf, colunaSup);
+
+        //ajustando para nao cortar um fardo ao meio
+        char letraInf = populacao[pai][colunaInf][0].back(), letraSup = populacao[pai][colunaSup][0].back(); //obtendo a identificacao de posicao do fardo
+        int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o corte para o inicio do fardo
+        colunaSup = colunaSup - ajusteSup, colunaInf = colunaInf - ajusteInf;
+
+        if (colunaInf < 0)
+            colunaInf = 0;
+
+        int tamanho = colunaSup - colunaInf;
+        //string2d filho = populacao[pai], filha = populacao[mae];
+        string2d filho(colunas, vector<string>(linhas, "")), filha(colunas, vector<string>(linhas, ""));
+        string2d cortePai(tamanho), corteMae(tamanho); //inicializando o vetor de corte
+
+        //cortando os pais para realizar a troca genetica em um intervalo pré-definido
+        copy(populacao[pai].begin() + colunaInf, populacao[pai].begin() + colunaSup, cortePai.begin());
+        copy(populacao[mae].begin() + colunaInf, populacao[mae].begin() + colunaSup, corteMae.begin());
+
+        //cruzando os filhos com as informacoes geneticas dos pais em um intervalo pré-definido
+        copy(corteMae.begin(), corteMae.end(), filho.begin() + colunaInf);
+        copy(cortePai.begin(), cortePai.end(), filha.begin() + colunaInf);
+        
+        string fardo;
+        for (int i = 0; i < colunas; i++) {
+            for (int j = 0; j < linhas; j++) {
+            
+                if (!checarDuplicatas(corteMae, populacao[pai][i][j])) {
+                    if (populacao[pai][i][j].back() == 'a') {
+                        
+                        fardo = populacao[pai][i][j];
+                        fardo.pop_back();
+
+                        unicosFilho.push_back(fardo);
+                    } 
+                }
+
+                if (!checarDuplicatas(cortePai, populacao[mae][i][j])) {
+                    if (populacao[mae][i][j].back() == 'a') {
+
+                        fardo = populacao[mae][i][j];
+                        fardo.pop_back();
+
+                        unicosFilha.push_back(fardo);
+                    }
+                }
+            }
+        }
+
+        filho = popularFilho(filho, unicosFilho);
+        filha = popularFilho(filha, unicosFilha);
+        
+        //adicionando os filhos na linhagem
+        linhagem.push_back(vector<vector<string>>());
+        linhagem[idx] = filho;
+        idx++;
+
+        linhagem.push_back(vector<vector<string>>());
+        linhagem[idx] = filha;
+        idx++;
+
+    }
+    return linhagem;
+}
+
+string3d mutacao(string3d populacao) {
+    //funcao de mutacao do cromossomo
+
+    char variantes[4] = { "abc" };
+
+    for (int k = 0; k < tamanho_populacao; k++) {
+        for (int j = 0; j < colunas; j++) {
+            for (int i = 0; i < linhas; i++) {
+
+                double num_aleatorio = rand() / (double)RAND_MAX;
+                if (num_aleatorio <= prob_mutacao) { //se o numero aleatorio for menor do que a probabilidade de mutacao, mutacionar
+
+                    int parada = 1; //criterio de parada para o loop
+                    while (parada != 0) { //continuar iterando ate ocorrer uma troca de fardos na matriz
+
+                        int swap_linha = rand() % linhas, swap_coluna = rand() % colunas; //gerando uma linha e coluna aleatoria para a troca
+                        int swap_tam = dados[clf(populacao[k][swap_coluna][swap_linha])].tamanho; //checando o tamanho do fardo escolhido aleatoriamente
+
+                        if (dados[clf(populacao[k][j][i])].tamanho == swap_tam) { //checando se o tamanho do fardo aleatorio é igual ao do fardo a ser trocado
+
+                            char letra_loc = populacao[k][j][i].back(), letra_swap = populacao[k][swap_coluna][swap_linha].back(); //pegando o indice de variacao dos fardos (a, b ou c)
+                            int valor_swap = (int)letra_swap, valor_loc = (int)letra_loc; //transformando os caracteres (a, b ou c) em numeros de acordo com a tabela ASCII
+
+                            if (swap_tam == 1) { //se forem fardos pequenos,
+
+                                for (int c = 0; c < 2; c++) { //variando quantas posicoes fardos pequenos ocupam na matriz
+                                    int var_swap = swap_linha + (int)variantes[c] - valor_swap; //obtendo de cada vez as posicoes a e b do fardo na matriz
+                                    int var_loc = i + (int)variantes[c] - valor_loc; //obtendo de cada vez as posicoes a e b do fardo na matriz
+
+                                    swap(populacao[k][j][var_loc], populacao[k][swap_coluna][var_swap]); //trocando os fardos de lugar
+                                }
+                            }
+
+                            else if (swap_tam == 2) { //grande
+
+                                for (int c = 0; c < 3; c++) { //variando quantas posicoes fardos grandes ocupam na matriz
+                                    int var_swap = swap_coluna + (int)variantes[c] - valor_swap; //obtendo de cada vez as posicoes a e b do fardo na matriz
+                                    int var_loc = j + (int)variantes[c] - valor_loc; //obtendo de cada vez as posicoes a e b do fardo na matriz
+
+                                    swap(populacao[k][var_loc][i], populacao[k][var_swap][swap_linha]); //trocando os fardos de lugar
+                                }
+                            }
+                            parada = 0; //quebrando o loop
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return populacao;
+}
+
+int main() {
+    //funcao principal
+
+    string3d populacao;
+    vector<int> fitval;
+    int num_geracao = 0;
+
+    srand(time(NULL)); //atualizando a semente para geracao de numeros aleatorios
+    //FreeConsole(); //funcao para que o prompt de comando nao abra
+
+    ler_planilha(criterio_peso); //abrindo planilha para input
+    colunas = (pequenos * 2 + grandes * 3) / linhas; //colunas necessarias para preenchimento de fardos
+
+    populacao = init(); //inicializando o cromossomo
+
+    fitval = fitness(populacao); //valor fitness da linhagem
+    cout << "Fitval inicial: " << *min_element(fitval.begin(), fitval.end());
+
+    while (num_geracao < tamanho_geracoes) {
+        fitval = fitness(populacao); //valor fitness
+        populacao = selecao(populacao, fitval); //selecionando individuos para cruzamento
+        populacao = cruzamento(populacao); //cruzando os individuos selecionados
+        //populacao = mutacao(populacao); //mutacionando a linhagem
+
+        num_geracao++;
+    }
+
+    fitval = fitness(populacao); //valor fitness da linhagem
+    cout << "Fitval final: " << *min_element(fitval.begin(), fitval.end());
+
+    //mapa(populacao, fitval); //exportando mapa
+
+    //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
+
+    return 0;
+}
