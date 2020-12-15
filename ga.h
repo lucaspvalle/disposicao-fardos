@@ -32,12 +32,12 @@ public:
 		populacaoTam = pop;
 		mutacaoProb = probabilidade;
 		inputFardos = input;
-
 	}
 
 	/*
 	Funções de apoio
 	*/
+
 	int categoria(string fardo);
 	vector<string> popularFardos(vector<string> filho, vector<string> mapa);
 
@@ -50,5 +50,4 @@ public:
 	int selecao();
 	string2d cruzamento();
 	string2d mutacao();
-
 };

@@ -1,5 +1,4 @@
 #include <fstream> //std::open
-#include <algorithm> //std::shuffle, std::min_element
 #include <Windows.h> //MessageBoxA
 #include "ga.h"
 using namespace std;
@@ -7,7 +6,7 @@ using namespace std;
 vector<planilha> ler_planilha(int criterio_peso) {
     //leitura de arquivo CSV com inputs de fardos
 
-    fstream arq;
+    ifstream arq;
     vector<planilha> inputFardos;
     string box, procedencia, peso, qtdade;
 
@@ -46,35 +45,32 @@ vector<planilha> ler_planilha(int criterio_peso) {
     }
     return inputFardos;
 }
-/*
-void mapa(string2d individuo, vector<int> fitval) {
-    //funcao para escrita do mapa de disposicao de fardos
+
+void mapa(ga algoritmo) {
+    //saida do mapa de disposicao de fardos
 
     ofstream arq;
-    int tipo, k = min_element(fitval.begin(), fitval.end()) - fitval.begin(); //indice do individuo com menor valor fitness
+    int melhor = min_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin(); //indice do individuo com menor valor fitness
 
     arq.open("temp.csv", ios::trunc); //inicializando arquivo csv a ser escrito
     if (arq.is_open()) { //apenas escrever se o arquivo estiver aberto
 
-        for (int j = 0; j < colunas; j++) {
-            for (int i = 0; i < linhas; i++) {
+        for (int i = 0; i < algoritmo.populacao[melhor].size(); i++) {
+            if (!algoritmo.populacao[melhor][i].empty()) {
 
-                if (!individuo[k][j][i].empty()) { //se o espaco nao estiver vazio,
+                int tipo = algoritmo.categoria(algoritmo.populacao[melhor][i]);
 
-                    tipo = clf(individuo[k][j][i]); //classificando o fardo
-                    if (individuo[k][j][i].back() == 'a') //apenas escrever no arquivo o primeiro fardo identificado
-                        arq << dados[tipo].procedencia << " (" << dados[tipo].box << "),"; //escrevendo a procedencia e o box de localizacao do fardo
-
-                    else //se for a identificacao de referencia para a ocupacao do tamanho do fardo na matriz, ignora
-                        arq << dados[tipo].tamanho << ',';
-                }
+                if (algoritmo.populacao[melhor][i].back() == 'a')
+                    arq << algoritmo.inputFardos[tipo].procedencia << " (" << algoritmo.inputFardos[tipo].box << "),";
+                else
+                    arq << algoritmo.inputFardos[tipo].tamanho << ',';
             }
-            arq << endl; //pulando linha no arquivo para ser consistente com as linhas da matriz
+            if ((i - 3) % algoritmo.linhas == 0)
+                cout << endl;
         }
-        arq.close(); //encerrando o arquivo
     }
+    arq.close();
 }
-*/
 
 int main() {
 
@@ -82,8 +78,8 @@ int main() {
     Parâmetros do algoritmo
     */
 
-    int populacaoTam = 100, geracaoTam = 10;
-    double mutacaoProb = 0.05;
+    int populacaoTam = 1000, geracaoTam = 100;
+    double mutacaoProb = 0.02;
 
     /*
     Inicialização de variáveis
@@ -104,7 +100,7 @@ int main() {
     populacao = algoritmo.init();
 
     fitval = algoritmo.fitness();
-    cout << "Fitval inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
+    cout << "Fitval inicial: " << *min_element(fitval.begin(), fitval.end()) << endl;
 
     /*
     Evolução
@@ -121,7 +117,10 @@ int main() {
     }
 
     fitval = algoritmo.fitness();
-    cout << "Fitval final: " << *max_element(fitval.begin(), fitval.end()) << endl;
+    cout << "Fitval final: " << *min_element(fitval.begin(), fitval.end()) << endl;
+
+    //mapa(algoritmo);
+    //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 
     return 0;
 }

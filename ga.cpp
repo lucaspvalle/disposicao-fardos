@@ -3,6 +3,7 @@
 /*
 Funções de apoio
 */
+
 int ga::categoria(string fardo) {
     //classificacao dos fardos de acordo com a procedencia
 
@@ -88,11 +89,9 @@ string2d ga::init() {
         shuffle(fardos.begin() + grandes + 1, fardos.end(), default_random_engine(time(NULL))); //misturando a ordem de fardos pequenos a serem inicializados
 
         for (int i = 0; i < matrizTam; i++) {
-
             if (populacao[chr][i].empty()) { //se a posicao estiver vazia, preencher
 
                 if (id < grandes) { //preenchimento de fardos grandes
-
                     for (int d = 0; d < 3; d++) { //um fardo grande requer 3 posicoes verticais da matriz
 
                         int var = i + d * linhas; //adicionando o fardo na linha i de 3 colunas
@@ -102,7 +101,6 @@ string2d ga::init() {
                 }
 
                 else if ((id >= grandes) && (id < total)) {
-
                     for (int d = 0; d < 2; d++) { //um fardo pequeno requer 2 posicoes horizontais da matriz
 
                         int var = i + d; //adicionando o fardo nas linhas i e i+1
@@ -127,13 +125,12 @@ vector<int> ga::fitness() {
             for (int x = 0; x < linhas; x++) { //iterando linhas
                 for (int y = x + 1; y < linhas; y++) { //iterando da linha x até a ultima linha da matriz
 
-                    int varOrigem = i + x;
-                    int varComp = i + y; //linha que está sendo comparada com a linha x atual
+                    int varOrigem = i + x, varComp = i + y; //linhas de origem e a que está sendo comparada
                     int fardoUm = categoria(populacao[chr][varOrigem]), fardoDois = categoria(populacao[chr][varComp]); //fardos que estão sendo comparados
-                    int diferenca = abs(y - x);
+                    int diferenca = abs(y - x); //distancia entre fardos
 
                     if (inputFardos[fardoUm].box == inputFardos[fardoDois].box) //se iguais,
-                        fitval[chr] += linhas - diferenca; //somar a distancia destes fardos no valor fitness
+                        fitval[chr] += (linhas - diferenca); //somar a distancia destes fardos no valor fitness
                 }
             }
         }
@@ -150,7 +147,7 @@ int ga::selecao() {
     while (vencedor == desafiante) //caso os individuos sejam os mesmos, gerar um novo
         desafiante = rand() % populacaoTam;
 
-    if (fitval[desafiante] < fitval[vencedor]) //o vencedor é quem tiver MAIOR valor fitness
+    if (fitval[desafiante] < fitval[vencedor]) //o vencedor é quem tiver MENOR valor fitness
         vencedor = desafiante;
 
     return vencedor;
@@ -184,33 +181,27 @@ string2d ga::cruzamento() {
         int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o corte para o inicio do fardo
         corteSup = corteSup - ajusteSup * linhas, corteInf = corteInf - ajusteInf * linhas;
 
-        int tamanho = corteSup - corteInf; //tamanho do corte
         vector<string> filho(populacao[pai].size(), ""), filha(populacao[mae].size(), ""); //inicializando os filhos
-        vector<string> cortePai(tamanho), corteMae(tamanho); //inicializando o vetor de corte
-
-        //cortando os pais para realizar a troca genetica em um intervalo pré-definido
-        copy(populacao[pai].begin() + corteInf, populacao[pai].begin() + corteSup, cortePai.begin());
-        copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, corteMae.begin());
 
         //cruzando os filhos com as informacoes geneticas dos pais em um intervalo pré-definido
-        copy(corteMae.begin(), corteMae.end(), filho.begin() + corteInf);
-        copy(cortePai.begin(), cortePai.end(), filha.begin() + corteInf);
+        copy(populacao[pai].begin() + corteInf, populacao[pai].begin() + corteSup, filha.begin() + corteInf);
+        copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf);
 
         vector<string> mapaFilho, mapaFilha;
 
         for (int i = 0; i < matrizTam; i++) {
 
             if (populacao[pai][i].back() == 'a') {
-                auto filhoIt = find(corteMae.begin(), corteMae.end(), populacao[pai][i]); //iterando em busca de duplicatas
+                auto filhoIt = find(filho.begin() + corteInf, filho.begin() + corteSup, populacao[pai][i]); //iterando em busca de duplicatas
                 
-                if (filhoIt == corteMae.end()) //se nao há duplicatas,
+                if (filhoIt == filho.begin() + corteSup) //se nao há duplicatas,
                     mapaFilho.push_back(populacao[pai][i]);
             }
 
             if (populacao[mae][i].back() == 'a') {
-                auto filhaIt = find(cortePai.begin(), cortePai.end(), populacao[mae][i]); //iterando em busca de duplicatas
+                auto filhaIt = find(filha.begin() + corteInf, filha.begin() + corteSup, populacao[mae][i]); //iterando em busca de duplicatas
                 
-                if (filhaIt == cortePai.end()) //se nao há duplicatas,
+                if (filhaIt == filha.begin() + corteSup) //se nao há duplicatas,
                     mapaFilha.push_back(populacao[mae][i]);
             }
         }
@@ -243,39 +234,34 @@ string2d ga::mutacao() {
             double num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
             if (num_aleatorio <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
 
-                int parada = 1; //criterio de parada para o loop
-                while (parada) { //continuar iterando ate ocorrer uma troca de fardos na matriz
+                int fardoSwap = rand() % matrizTam; //escolhendo um fardo aleatorio para troca
+                string tamSwap = inputFardos[categoria(populacao[chr][fardoSwap])].tamanho; //tamanho (pequeno/grande) do fardo para troca
+                string tamLoc = inputFardos[categoria(populacao[chr][i])].tamanho; //tamanho (pequeno/grande) do fardo original
 
-                    int fardoSwap = rand() % matrizTam; //escolhendo um fardo aleatorio para troca
-                    string tamSwap = inputFardos[categoria(populacao[chr][fardoSwap])].tamanho; //tamanho (pequeno/grande) do fardo para troca
-                    string tamLoc = inputFardos[categoria(populacao[chr][i])].tamanho; //tamanho (pequeno/grande) do fardo original
+                while (tamSwap != tamLoc) { //garantindo que a troca ocorra entre fardos de mesmo tamanho
+                    fardoSwap = rand() % matrizTam;
+                    tamSwap = inputFardos[categoria(populacao[chr][fardoSwap])].tamanho;
+                }
 
-                    if (tamSwap == tamLoc) { //se os tamanhos forem identicos,
+                //ajustando o fardo para trocas sempre entre posicoes a-a, b-b e c-c
+                char letraLoc = populacao[chr][i].back(), letraSwap = populacao[chr][fardoSwap].back();
+                int ajusteLoc = (int)letraLoc, ajusteSwap = (int)letraSwap;
 
-                        //ajustando o fardo para trocas sempre entre posicoes a-a, b-b e c-c
-                        char letraLoc = populacao[chr][i].back(), letraSwap = populacao[chr][fardoSwap].back();
-                        int ajusteLoc = (int)letraLoc, ajusteSwap = (int)letraSwap;
+                if (tamSwap == "pequeno") { //se forem fardos pequenos,
+                    for (int c = 0; c < 2; c++) { //variando as 2 posicoes que fardos pequenos ocupam
 
-                        if (tamSwap == "pequeno") { //se forem fardos pequenos,
+                        int varSwap = fardoSwap + (int)variantes[c] - ajusteSwap;
+                        int varLoc = i + (int)variantes[c] - ajusteLoc;
+                        swap(populacao[chr][varLoc], populacao[chr][varSwap]); //trocando os fardos de lugar
+                    }
+                }
 
-                            for (int c = 0; c < 2; c++) { //variando as 2 posicoes que fardos pequenos ocupam
-                                
-                                int varSwap = fardoSwap + (int)variantes[c] - ajusteSwap;
-                                int varLoc = i + (int)variantes[c] - ajusteLoc;
-                                swap(populacao[chr][varLoc], populacao[chr][varSwap]); //trocando os fardos de lugar
-                            }
-                        }
+                else if (tamSwap == "grande") { //se grandes,
+                    for (int c = 0; c < 3; c++) { //variando as 3 posicoes que fardos grandes ocupam
 
-                        else if (tamSwap == "grande") { //grande
-
-                            for (int c = 0; c < 3; c++) { //variando as 3 posicoes que fardos grandes ocupam
-
-                                int varSwap = fardoSwap + ((int)variantes[c] - ajusteSwap) * linhas;
-                                int varLoc = i + ((int)variantes[c] - ajusteLoc) * linhas;
-                                swap(populacao[chr][varLoc], populacao[chr][varSwap]); //trocando os fardos de lugar
-                            }
-                        }
-                        parada = 0;
+                        int varSwap = fardoSwap + ((int)variantes[c] - ajusteSwap) * linhas;
+                        int varLoc = i + ((int)variantes[c] - ajusteLoc) * linhas;
+                        swap(populacao[chr][varLoc], populacao[chr][varSwap]); //trocando os fardos de lugar
                     }
                 }
             }
