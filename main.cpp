@@ -1,7 +1,9 @@
 #include <fstream> //std::open
 #include <Windows.h> //MessageBoxA
+#include <chrono>
 #include "ga.h"
 using namespace std;
+using namespace std::chrono;
 
 vector<planilha> ler_planilha(int criterio_peso) {
     //leitura de arquivo CSV com inputs de fardos
@@ -63,10 +65,13 @@ void mapa(ga algoritmo) {
                 if (algoritmo.populacao[melhor][i].back() == 'a')
                     arq << algoritmo.inputFardos[tipo].procedencia << " (" << algoritmo.inputFardos[tipo].box << "),";
                 else
-                    arq << algoritmo.inputFardos[tipo].tamanho << ',';
+                    if (algoritmo.inputFardos[tipo].tamanho == "grande")
+                        arq << "2" << ',';
+                    else
+                        arq << "1" << ',';
             }
-            if ((i - 3) % algoritmo.linhas == 0)
-                cout << endl;
+            if (((i - 3) % algoritmo.linhas) == 0)
+                arq << endl;
         }
     }
     arq.close();
@@ -78,8 +83,8 @@ int main() {
     Parâmetros do algoritmo
     */
 
-    int populacaoTam = 1000, geracaoTam = 100;
-    double mutacaoProb = 0.02;
+    int populacaoTam = 10, geracaoTam = 10;
+    double mutacaoProb = 0.05;
 
     /*
     Inicialização de variáveis
@@ -93,6 +98,7 @@ int main() {
 
     srand(time(NULL)); //semente para geracao de numeros aleatorios
     //FreeConsole();  //fechar o prompt de comando durante a execucao
+    time_point<system_clock> comeco, fim;
 
     inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
 
@@ -100,26 +106,32 @@ int main() {
     populacao = algoritmo.init();
 
     fitval = algoritmo.fitness();
-    cout << "Fitval inicial: " << *min_element(fitval.begin(), fitval.end()) << endl;
+    cout << "=== Valores Fitness ===" << endl;
+    cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
 
     /*
     Evolução
     */
 
-    int geracaoNum = 0;
-    while (geracaoNum != geracaoTam) {
+    comeco = system_clock::now();
+
+    for (int ger = 0; ger < geracaoTam; ger++) {
 
         fitval = algoritmo.fitness();
         linhagem = algoritmo.cruzamento();
         linhagem = algoritmo.mutacao();
-
-        geracaoNum++;
     }
 
-    fitval = algoritmo.fitness();
-    cout << "Fitval final: " << *min_element(fitval.begin(), fitval.end()) << endl;
+    fim = system_clock::now();
 
-    //mapa(algoritmo);
+    fitval = algoritmo.fitness();
+    cout << "Final: " << *max_element(fitval.begin(), fitval.end()) << endl;
+
+    duration<double> segundos = fim - comeco;
+    cout << endl << "=== Tempo do AG ===" << endl;
+    cout << segundos.count() << " segundos" << endl;
+
+    mapa(algoritmo);
     //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 
     return 0;

@@ -79,6 +79,7 @@ string2d ga::init() {
         fardos.push_back(i); //adicionando os fardos no vetor de controle
 
     ga::matrizTam = pequenos * 2 + grandes * 3; //calculando o tamanho necessario matriz para acomodar todos os fardos
+    ga::colunas = matrizTam / linhas; //armazenando tamanho da coluna
 
     string2d populacao(populacaoTam, vector<string>(matrizTam, "")); //inicializando a populacao com <populacaoTam> individuos de tamanho <matrizTam>
 
@@ -119,22 +120,40 @@ vector<int> ga::fitness() {
     //valor fitness dos cromossomos
     
     vector<int> fitval(populacaoTam, 0); //inicializando o valor fitness de cada cromossomo igual a 0
-
+    
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
-        for (int i = 0; i < populacao[chr].size(); i = i + linhas) { //iterando colunas
-            for (int x = 0; x < linhas; x++) { //iterando linhas
-                for (int y = x + 1; y < linhas; y++) { //iterando da linha x até a ultima linha da matriz
 
-                    int varOrigem = i + x, varComp = i + y; //linhas de origem e a que está sendo comparada
-                    int fardoUm = categoria(populacao[chr][varOrigem]), fardoDois = categoria(populacao[chr][varComp]); //fardos que estão sendo comparados
-                    int diferenca = abs(y - x); //distancia entre fardos
+        vector<vector<int>> projecao(inputFardos.size(), vector<int>(colunas, 0));
 
-                    if (inputFardos[fardoUm].box == inputFardos[fardoDois].box) //se iguais,
-                        fitval[chr] += (linhas - diferenca); //somar a distancia destes fardos no valor fitness
+        for (int col = 0; col < colunas; col++) { //iterando colunas
+            for (int i = 0; i < linhas; i++) { //iterando linhas
+
+                int var = (col * linhas) + i;
+                int boxFardo = inputFardos[categoria(populacao[chr][var])].box;
+
+                for (int tipo = 0; tipo < inputFardos.size(); tipo++)
+                    if (inputFardos[tipo].box == boxFardo) {
+                        projecao[tipo][col] = 1;
+                        break;
+                    }
+            }
+        }
+
+        for (int tipo = 0; tipo < inputFardos.size(); tipo++) {
+            int colBase = -1;
+            for (int col = 0; col < colunas; col++) {
+
+                if (colBase == -1 && projecao[tipo][col] == 1)
+                    colBase = col;
+
+                if (projecao[tipo][col] == 1) {
+                    fitval[chr] += (col - colBase);
+                    colBase = col;
                 }
             }
         }
     }
+
     ga::fitval = fitval;
     return fitval;
 }
@@ -147,7 +166,7 @@ int ga::selecao() {
     while (vencedor == desafiante) //caso os individuos sejam os mesmos, gerar um novo
         desafiante = rand() % populacaoTam;
 
-    if (fitval[desafiante] < fitval[vencedor]) //o vencedor é quem tiver MENOR valor fitness
+    if (fitval[desafiante] > fitval[vencedor]) //o vencedor é quem tiver MAIOR valor fitness
         vencedor = desafiante;
 
     return vencedor;
@@ -157,7 +176,6 @@ string2d ga::cruzamento() {
     //Order Crossover (OX)
 
     string2d linhagem; //filhos gerados
-    int colunas = matrizTam / linhas;
     int idx = 0;
 
     while (linhagem.size() < populacaoTam) {
@@ -217,6 +235,10 @@ string2d ga::cruzamento() {
 
         linhagem.push_back(vector<string>());
         linhagem[idx] = filha;
+        idx++;
+
+        linhagem.push_back(vector<string>());
+        linhagem[idx] = populacao[pai];
         idx++;
     }
     ga::populacao = linhagem;

@@ -21,7 +21,7 @@ public:
 	int populacaoTam; //tamanho da populacao
 	double mutacaoProb; //probabilidade de mutacao
 	const int linhas = 4; //quantidade de linhas da matriz
-	int matrizTam;
+	int matrizTam, colunas;
 
 	string2d populacao; //populacao de cromossomos
 	vector<int> fitval; //valores fitness da populacao
