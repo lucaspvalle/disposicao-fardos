@@ -57,20 +57,20 @@ void mapa(ga algoritmo) {
     arq.open("temp.csv", ios::trunc); //inicializando arquivo csv a ser escrito
     if (arq.is_open()) { //apenas escrever se o arquivo estiver aberto
 
-        for (int i = 0; i < algoritmo.populacao[melhor].size(); i++) {
-            if (!algoritmo.populacao[melhor][i].empty()) {
+        for (int i = 0; i < algoritmo.populacao[melhor].size(); i++) { //iterando todos os espacos da matriz do melhor individuo
+            if (!algoritmo.populacao[melhor][i].empty()) { //caso o espaco esteja preenchido,
 
-                int tipo = algoritmo.categoria(algoritmo.populacao[melhor][i]);
+                int tipo = algoritmo.categoria(algoritmo.populacao[melhor][i]); //obter a categoria do fardo
 
-                if (algoritmo.populacao[melhor][i].back() == 'a')
-                    arq << algoritmo.inputFardos[tipo].procedencia << " (" << algoritmo.inputFardos[tipo].box << "),";
-                else
-                    if (algoritmo.inputFardos[tipo].tamanho == "grande")
-                        arq << "2" << ',';
-                    else
-                        arq << "1" << ',';
+                if (algoritmo.populacao[melhor][i].back() == 'a') //se a identificao for "a" (primeira posicao do fardo,
+                    arq << algoritmo.inputFardos[tipo].procedencia << " (" << algoritmo.inputFardos[tipo].box << "),"; //escrever a procedencia e o box do fardo
+                else //caso contrario (se a identificacao for "b" ou "c"),
+                    if (algoritmo.inputFardos[tipo].tamanho == "grande") //e o fardo seja grande,
+                        arq << "2" << ','; //escrever "2" para identificacao posterior na elaboracao do mapa no excel
+                    else //e o fardo seja pequeno,
+                        arq << "1" << ','; //escrever "1" para identificacao posterior na elaboracao do mapa no excel
             }
-            if (((i - 3) % algoritmo.linhas) == 0)
+            if (((i - 3) % algoritmo.linhas) == 0) //pular linha quando o mapa já estiver na 4ª linha da coluna
                 arq << endl;
         }
     }
@@ -83,8 +83,8 @@ int main() {
     Parâmetros do algoritmo
     */
 
-    int populacaoTam = 10, geracaoTam = 10;
-    double mutacaoProb = 0.05;
+    int populacaoTam = 20, geracaoTam = 300;
+    double mutacaoProb = 0.1;
 
     /*
     Inicialização de variáveis
@@ -102,10 +102,10 @@ int main() {
 
     inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
 
-    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); 
-    populacao = algoritmo.init();
+    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
+    populacao = algoritmo.init(); //inicializando a populacao para evolucao
 
-    fitval = algoritmo.fitness();
+    fitval = algoritmo.fitness(); //avaliando a populacao inicializada para comparacao
     cout << "=== Valores Fitness ===" << endl;
     cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
 
@@ -113,25 +113,25 @@ int main() {
     Evolução
     */
 
-    comeco = system_clock::now();
+    comeco = system_clock::now(); //iniciando cronometro
 
-    for (int ger = 0; ger < geracaoTam; ger++) {
+    for (int ger = 0; ger < geracaoTam; ger++) { //iteracao de geracoes
 
         fitval = algoritmo.fitness();
         linhagem = algoritmo.cruzamento();
-        linhagem = algoritmo.mutacao();
+        //linhagem = algoritmo.mutacao();
     }
 
-    fim = system_clock::now();
+    fim = system_clock::now(); //parando cronometro
 
     fitval = algoritmo.fitness();
     cout << "Final: " << *max_element(fitval.begin(), fitval.end()) << endl;
 
-    duration<double> segundos = fim - comeco;
+    duration<double> segundos = fim - comeco; //calculando tempo de execucao
     cout << endl << "=== Tempo do AG ===" << endl;
     cout << segundos.count() << " segundos" << endl;
 
-    mapa(algoritmo);
+    //mapa(algoritmo);
     //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 
     return 0;
