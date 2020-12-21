@@ -3,7 +3,6 @@
 #include <chrono>
 #include "ga.h"
 using namespace std;
-using namespace std::chrono;
 
 vector<planilha> ler_planilha(int criterio_peso) {
     //leitura de arquivo CSV com inputs de fardos
@@ -52,8 +51,8 @@ void mapa(ga algoritmo) {
     //saida do mapa de disposicao de fardos
 
     ofstream arq;
-    int melhor = min_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin(); //indice do individuo com menor valor fitness
-
+    auto melhor = max_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin(); //indice do individuo com maior valor fitness
+    
     arq.open("temp.csv", ios::trunc); //inicializando arquivo csv a ser escrito
     if (arq.is_open()) { //apenas escrever se o arquivo estiver aberto
 
@@ -64,6 +63,7 @@ void mapa(ga algoritmo) {
 
                 if (algoritmo.populacao[melhor][i].back() == 'a') //se a identificao for "a" (primeira posicao do fardo,
                     arq << algoritmo.inputFardos[tipo].procedencia << " (" << algoritmo.inputFardos[tipo].box << "),"; //escrever a procedencia e o box do fardo
+                
                 else //caso contrario (se a identificacao for "b" ou "c"),
                     if (algoritmo.inputFardos[tipo].tamanho == "grande") //e o fardo seja grande,
                         arq << "2" << ','; //escrever "2" para identificacao posterior na elaboracao do mapa no excel
@@ -79,57 +79,69 @@ void mapa(ga algoritmo) {
 
 int main() {
 
+    //FreeConsole();  //fechar o prompt de comando durante a execucao
+
     /*
     Parâmetros do algoritmo
     */
 
-    int populacaoTam = 20, geracaoTam = 300;
-    double mutacaoProb = 0.1;
+    int populacaoTam = 20, geracaoTam = 100;
+    double mutacaoProb = 0.05;
 
     /*
     Inicialização de variáveis
     */
 
     vector<planilha> inputFardos;
-    string2d populacao, linhagem;
     vector<int> fitval;
 
-    int criterio_peso = 220;
+    chrono::time_point<chrono::system_clock> comeco, fim; //cronometros
 
-    srand(time(NULL)); //semente para geracao de numeros aleatorios
-    //FreeConsole();  //fechar o prompt de comando durante a execucao
-    time_point<system_clock> comeco, fim;
+    int criterio_peso = 220; //classificacao de tamanhos de fardos
+    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
+    
+    /*
+    Inicialização do algoritmo
+    */
 
     inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
 
     ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
-    populacao = algoritmo.init(); //inicializando a populacao para evolucao
-
-    fitval = algoritmo.fitness(); //avaliando a populacao inicializada para comparacao
-    cout << "=== Valores Fitness ===" << endl;
-    cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
+    algoritmo.init(); //inicializando a populacao para evolucao
+    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
 
     /*
     Evolução
     */
 
-    comeco = system_clock::now(); //iniciando cronometro
+    cout << "=== Valores Fitness ===" << endl;
+    cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
 
-    for (int ger = 0; ger < geracaoTam; ger++) { //iteracao de geracoes
+    comeco = chrono::system_clock::now(); //iniciando cronometro
+
+    for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
 
         fitval = algoritmo.fitness();
-        linhagem = algoritmo.cruzamento();
-        //linhagem = algoritmo.mutacao();
+        algoritmo.cruzamento();
+        //algoritmo.mutacao();
     }
 
-    fim = system_clock::now(); //parando cronometro
+    fim = chrono::system_clock::now(); //parando cronometro
 
     fitval = algoritmo.fitness();
     cout << "Final: " << *max_element(fitval.begin(), fitval.end()) << endl;
 
-    duration<double> segundos = fim - comeco; //calculando tempo de execucao
+    /*
+    Cronômetro
+    */
+
+    chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
     cout << endl << "=== Tempo do AG ===" << endl;
     cout << segundos.count() << " segundos" << endl;
+
+    /*
+    Saída
+    */
 
     //mapa(algoritmo);
     //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);

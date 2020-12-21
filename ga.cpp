@@ -21,72 +21,63 @@ int ga::categoria(string fardo) {
     return 99; //caso esteja errado
 }
 
-vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa) {
+vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int corte) {
     //suporte de preenchimento de fardos para operador OX
-
-    string variantes = { "abc" };
-
-    for (int pos = 0; pos < mapa.size(); pos++) {
-        if (inputFardos[categoria(mapa[pos])].tamanho != "grande") {
-
-            for (int i = pos; i < mapa.size(); i++) {
-                if (inputFardos[categoria(mapa[i])].tamanho == "grande") {
-
-                    swap(mapa[pos], mapa[i]);
-                    break;
-                }
-            }
-        }
-    }
-
-    int i = 0, j = 0, pos = 0, var, varUm, varDois, varIter;
-    while (inputFardos[categoria(mapa[pos])].tamanho == "grande") {
-
-        var = j + (i * linhas);
-        varUm = var + linhas, varDois = var + 2 * linhas;
-
-        if (filho[var].empty() && filho[varUm].empty() && filho[varDois].empty()) {
-
-            mapa[pos].pop_back();
-
-            for (int d = 0; d < 3; d++) {
-                varIter = var + d * linhas;
-                filho[varIter] = mapa[pos] + variantes[d];
-            }
-            mapa.erase(mapa.begin() + pos);
-        }
-        j++;
-
-        if (j == 2)
-            j = 0, i++;
-
-        if (i > colunas - 3)
-            i = 0;
-    }
     
-    i = 0, j = 0;
-    while (mapa.size() != 0) {
+    string variantes = { "abc" };
+    vector<string> pequenos, grandes;
 
-        var = j + (i * linhas);
-        varUm = var + 1;
+    for (int idx = 0; idx < mapa.size(); idx++) { //classificando os fardos a serem alocados
+        if (inputFardos[categoria(mapa[idx])].tamanho == "grande") //se grandes,
+            grandes.push_back(mapa[idx]);
+        else //se pequenos,
+            pequenos.push_back(mapa[idx]);
+    }
 
-        if (filho[var].empty() && filho[varUm].empty()) {
+    int i = corte / linhas, j = 0, idx = 0;
+    while (grandes.size() != 0) { //enquanto houver fardos grandes a serem alocados,
 
-            mapa[pos].pop_back();
+        int var = j + (i * linhas); //ponto de insercao
+        int varUm = var + linhas, varDois = var + (2 * linhas); //ponto de insercao dos outros espacos do fardo
 
-            for (int d = 0; d < 2; d++) {
-                varIter = var + d;
-                filho[varIter] = mapa[pos] + variantes[d];
+        if (varUm >= matrizTam || varDois >= matrizTam) { i = 0; continue; } //se a matriz estiver no final, voltar para o comeco
+
+        if (filho[var].empty() && filho[varUm].empty() && filho[varDois].empty()) { //se os espacos estiverem vazios (disponiveis),
+            
+            grandes[idx].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
+
+            for (int d = 0; d < 3; d++) { //iterar a quantidade de posicoes necessarias para o fardo
+                int varIter = var + d * linhas;
+                filho[varIter] = grandes[idx] + variantes[d];
             }
-            mapa.erase(mapa.begin() + pos);
+            grandes.erase(grandes.begin()); //apagar da lista o fardo ja alocado
         }
-        j = j + 2;
+        j++; //proxima linha
 
-        if (j == 4)
-            j = 0, i++;
+        if (j == 2 && grandes.size() != 0) { j = 0, i = i + 3; } //se o par de fardos grandes ja estiverem alocados, ir para a proxima coluna disponivel
+    }
 
-        if (j + (i * linhas) > matrizTam - 2)
-            i = 0;
+    while (pequenos.size() != 0) { //enquanto houver fardos pequenos a serem alocados,
+
+        int var = j + i * linhas; //ponto de insercao
+        int varUm = var + 1; //ponto de insercao dos outros espacos do fardo
+
+        if (varUm == matrizTam) { i = 0; continue; } //se a matriz estiver no final, voltar para o comeco
+
+        if (filho[var].empty() && filho[varUm].empty()) { //se os espacos estiverem vazios (disponiveis),
+
+            pequenos[idx].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
+
+            for (int d = 0; d < 2; d++) { //iterar a quantidade de posicoes necessarias para o fardo
+                int varIter = var + d;
+                filho[varIter] = pequenos[idx] + variantes[d];
+            }
+            pequenos.erase(pequenos.begin()); //apagar da lista o fardo ja alocado
+        }
+        j = j + 2; //proxima posicao disponivel
+
+        if (j == linhas) { j = 0, i++; } //se estiver no fim da largura da matriz, voltar para o comeco
+        if (i == colunas) { i = 0; } //se estiver no fim do comprimento da matriz, voltar para o comeco
     }
     return filho;
 }
@@ -95,10 +86,10 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa) {
 Funções do algoritmo genético
 */
 
-string2d ga::init() {
+void ga::init() {
 
     vector<int> fardos; //controle de fardos a serem misturados
-    int total, grandes = 0, pequenos = 0; //quantidade de fardos classificados como grandes e pequenos
+    int grandes = 0, pequenos = 0, total; //quantidade de fardos classificados como grandes e pequenos
     string variantes = { "abc" }; //identificador de posicoes do fardo na matriz de acordo com seu tamanho
 
     for (int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
@@ -125,16 +116,17 @@ string2d ga::init() {
 
         for (int i = 0; i < linhas; i++) {
             for (int j = 0; j < colunas; j++) {
-                if (populacao[chr][i + j * linhas].empty()) { //se a posicao estiver vazia, preencher
+                int var = i + j * linhas;
+                if (populacao[chr][var].empty()) { //se a posicao estiver vazia, preencher
 
                     if (id < grandes) { //preenchimento de fardos grandes
                         for (int d = 0; d < 3; d++) { //um fardo grande requer 3 posicoes verticais da matriz
 
                             int varUm = i + (j + d) * linhas; //adicionando o fardo na linha i+j de 3 colunas
-                            int varDois = varUm + 1; //adicionando o fardo par na linha i+j+1 de 3 colunas
+                            int varDois = varUm + 1, fardoId = id + 1; //adicionando o fardo par na linha i+j+1 de 3 colunas
 
                             populacao[chr][varUm] = to_string(fardos[id]) + variantes[d]; //adicionando a identificacao do fardo (123) com a sua posicao (a, b ou c)
-                            populacao[chr][varDois] = to_string(fardos[id + 1]) + variantes[d]; //adicionando a identificacao do fardo (123) com a sua posicao (a, b ou c)
+                            populacao[chr][varDois] = to_string(fardos[fardoId]) + variantes[d]; //adicionando a identificacao do fardo (123) com a sua posicao (a, b ou c)
                         }
                         id = id + 2; //atualizando o fardo a ser inicializado
                     }
@@ -152,7 +144,6 @@ string2d ga::init() {
         }
     }
     ga::populacao = populacao;
-    return populacao;
 }
 
 vector<int> ga::fitness() {
@@ -208,19 +199,23 @@ int ga::selecao() {
     return vencedor;
 }
 
-string2d ga::cruzamento() {
+void ga::cruzamento() {
     //Order Crossover (OX)
 
-    string2d linhagem; //filhos gerados
     int idx = 0;
+    string2d linhagem;
 
-    while (linhagem.size() < populacaoTam) {
+    //elitismo :: continuar com o melhor individuo na proxima geracao
+    int melhor = max_element(fitval.begin(), fitval.end()) - fitval.begin();
+
+    linhagem.push_back(vector<string>());
+    linhagem[idx] = populacao[melhor];
+    idx++;
+
+    while (linhagem.size() < populacaoTam) { //enquanto a linhagem nao for do tamanho desejado,
 
         int pai = selecao(), mae = selecao(); //selecionando dois genitores para linhagem
         int corteInf = rand() % colunas, corteSup = rand() % colunas; //gerando dois pontos de corte aleatorios
-
-        while (pai == mae) //caso os individuos sejam os mesmos, gerar um novo
-            mae = selecao();
 
         while (corteSup == corteInf) //caso as colunas sejam as mesmas, gerar uma nova
             corteSup = rand() % colunas;
@@ -231,79 +226,61 @@ string2d ga::cruzamento() {
         corteInf = corteInf * linhas, corteSup = corteSup * linhas;
 
         //ajustando para nao cortar um fardo ao meio
-        char letraInf = populacao[pai][corteInf].back(), letraSup = populacao[mae][corteSup].back(); //verificando a posicao do fardo
+        char letraInf = populacao[mae][corteInf].back(), letraSup = populacao[mae][corteSup].back(); //verificando a posicao do fardo
         int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o corte para o inicio do fardo
         corteSup = corteSup - ajusteSup * linhas, corteInf = corteInf - ajusteInf * linhas;
 
-        vector<string> filho(populacao[pai].size(), ""), filha(populacao[mae].size(), ""); //inicializando os filhos
+        vector<string> filho(matrizTam, ""), mapaFilho; //inicializando o filho e mapa de apoio
+        copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf); //cruzando o filho com a informacao genetica da mae
 
-        //cruzando os filhos com as informacoes geneticas dos pais em um intervalo pré-definido
-        copy(populacao[pai].begin() + corteInf, populacao[pai].begin() + corteSup, filha.begin() + corteInf);
-        copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf);
+        for (int i = 0; i < matrizTam; i++) { //para todas as posicoes da matriz do PAI,
+            if (populacao[pai][i].back() == 'a') { //caso o fardo esteja em sua posicao "a" (inicial),
+                auto filhoIt = find(filho.begin() + corteInf, filho.begin() + corteSup, populacao[pai][i]); //iterar em busca de duplicatas do corte proveniente da MAE
 
-        vector<string> mapaFilho, mapaFilha;
-
-        for (int i = 0; i < matrizTam; i++) {
-
-            if (populacao[pai][i].back() == 'a') {
-                auto filhoIt = find(filho.begin() + corteInf, filho.begin() + corteSup, populacao[pai][i]); //iterando em busca de duplicatas
-                
                 if (filhoIt == filho.begin() + corteSup) //se nao há duplicatas,
-                    mapaFilho.push_back(populacao[pai][i]);
-            }
-
-            if (populacao[mae][i].back() == 'a') {
-                auto filhaIt = find(filha.begin() + corteInf, filha.begin() + corteSup, populacao[mae][i]); //iterando em busca de duplicatas
-                
-                if (filhaIt == filha.begin() + corteSup) //se nao há duplicatas,
-                    mapaFilha.push_back(populacao[mae][i]);
+                    mapaFilho.push_back(populacao[pai][i]); //adicionar ao mapa para preenchimento dos espacos vazios do filho
             }
         }
-
-        //preenchendo os espacos vazios de fardos que estavam duplicados
-        filho = popularFardos(filho, mapaFilho);
-        filha = popularFardos(filha, mapaFilha);
+        filho = popularFardos(filho, mapaFilho, corteSup); //populando o filho fora da area de corte
 
         //adicionando os filhos na linhagem
         linhagem.push_back(vector<string>());
         linhagem[idx] = filho;
         idx++;
-
-        linhagem.push_back(vector<string>());
-        linhagem[idx] = filha;
-        idx++;
     }
     ga::populacao = linhagem;
-    return linhagem;
 }
 
-string2d ga::mutacao() {
+void ga::mutacao() {
     //mutacao por inversao
 
-    int tamanhoBloco = 6; //invertendo 6 colunas
+    int colunasBloco = 3, tamanhoBloco = colunasBloco * linhas; //tamanho do bloco de inversao
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         double num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
         if (num_aleatorio <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
 
-            int corteInf = (rand() % colunas) * linhas; //gerando um ponto de corte aleatorio
-            char letraInf = populacao[chr][corteInf].back(); //analisando o ponto em que o fardo está sendo cortado
-            int ajusteInf = (int)letraInf - (int)'a'; //ajustando o fardo para nao cortá-lo ao meio
-            
-            corteInf = corteInf - ajusteInf * linhas;
+            int corteInf = rand() % (colunas - colunasBloco), corteSup = rand() % (colunas - colunasBloco); //gerando um ponto de corte aleatorio
 
-            if ((corteInf + tamanhoBloco * linhas) > matrizTam) //verificando se há espaco necessario para a inversao
-                corteInf = corteInf - tamanhoBloco * linhas;
+            while (corteSup == corteInf) //caso as colunas sejam as mesmas, gerar uma nova
+                corteSup = rand() % (colunas - colunasBloco);
 
-            for (int i = 0; i < (tamanhoBloco / 2); i++) { //invertendo...
-                for (int j = 0; j < linhas; j++) { //iterando as linhas das colunas
-                    int varUm = corteInf + j + (i * linhas); //primeiro fardo
-                    int varDois = corteInf + j + ((tamanhoBloco / 2) + i) * linhas; //segundo fardo
-                    swap(populacao[chr][varUm], populacao[chr][varDois]); //troca
-                }
-            }
+            if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
+                swap(corteInf, corteSup);
+
+            corteInf = corteInf * linhas, corteSup = corteSup * linhas;
+
+            char letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back(); //analisando o ponto em que o fardo está sendo cortado
+            int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o fardo para nao cortá-lo ao meio
+            corteInf = corteInf - ajusteInf * linhas, corteSup = corteSup - ajusteSup * linhas;
+
+            //swap de blocos
+            vector<string> temp(tamanhoBloco, "");
+
+            copy(populacao[chr].begin() + corteInf, populacao[chr].begin() + corteInf + tamanhoBloco, temp.begin()); //corte 1
+            copy(populacao[chr].begin() + corteSup, populacao[chr].begin() + corteSup + tamanhoBloco, populacao[chr].begin() + corteInf); //corte 2
+            copy(temp.begin(), temp.end(), populacao[chr].begin() + corteSup);
         }
     }
     ga::populacao = populacao;
-    return populacao;
 }

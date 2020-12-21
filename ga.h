@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm> //std::shuffle, std::max_element
 #include <random> //std::default_random_engine, std::rand
-#include <iostream> //std::cout, std::time
+#include <iostream>
 #include <string>
 #include <vector>
 using namespace std;
@@ -39,15 +39,15 @@ public:
 	*/
 
 	int categoria(string fardo);
-	vector<string> popularFardos(vector<string> filho, vector<string> mapa);
+	vector<string> popularFardos(vector<string> filho, vector<string> mapa, int corte);
 
 	/*
 	Funções do algoritmo genético
 	*/
 
-	string2d init();
+	void init();
 	vector<int> fitness();
 	int selecao();
-	string2d cruzamento();
-	string2d mutacao();
+	void cruzamento();
+	void mutacao();
 };
