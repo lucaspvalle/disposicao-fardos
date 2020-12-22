@@ -4,6 +4,21 @@
 Funções de apoio
 */
 
+int* gerarCorte(int colunas) {
+
+    int corteInf = 0, corteSup = 0;
+
+    do { //gerando dois pontos de corte aleatorios
+        corteInf = rand() % colunas, corteSup = rand() % colunas;
+    } while (corteInf == corteSup);
+
+    if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
+        swap(corteInf, corteSup);
+
+    int saida[] = { corteInf, corteSup };
+    return saida;
+}
+
 int ga::categoria(string fardo) {
     //classificacao dos fardos de acordo com a procedencia
 
@@ -149,7 +164,7 @@ void ga::init() {
 vector<int> ga::fitness() {
     //valor fitness dos cromossomos
     
-    vector<int> fitval(populacaoTam, 0); //inicializando o valor fitness de cada cromossomo igual a 0
+    vector<int> val(populacaoTam, 0); //inicializando o valor fitness de cada cromossomo igual a 0
     
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         vector<vector<int>> projecao(inputFardos.size(), vector<int>(colunas, 0));
@@ -174,15 +189,15 @@ vector<int> ga::fitness() {
                     colBase = col;
 
                 if (projecao[tipo][col] == 1) {
-                    fitval[chr] += (col - colBase);
+                    val[chr] += (col - colBase);
                     colBase = col;
                 }
             }
         }
     }
 
-    ga::fitval = fitval;
-    return fitval;
+    ga::fitval = val;
+    return val;
 }
 
 int ga::selecao() {
@@ -228,7 +243,7 @@ void ga::cruzamento() {
         //ajustando para nao cortar um fardo ao meio
         char letraInf = populacao[mae][corteInf].back(), letraSup = populacao[mae][corteSup].back(); //verificando a posicao do fardo
         int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o corte para o inicio do fardo
-        corteSup = corteSup - ajusteSup * linhas, corteInf = corteInf - ajusteInf * linhas;
+        corteSup -= ajusteSup * linhas, corteInf -= ajusteInf * linhas;
 
         vector<string> filho(matrizTam, ""), mapaFilho; //inicializando o filho e mapa de apoio
         copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf); //cruzando o filho com a informacao genetica da mae
@@ -236,7 +251,7 @@ void ga::cruzamento() {
         for (int i = 0; i < matrizTam; i++) { //para todas as posicoes da matriz do PAI,
             if (populacao[pai][i].back() == 'a') { //caso o fardo esteja em sua posicao "a" (inicial),
                 auto filhoIt = find(filho.begin() + corteInf, filho.begin() + corteSup, populacao[pai][i]); //iterar em busca de duplicatas do corte proveniente da MAE
-
+                
                 if (filhoIt == filho.begin() + corteSup) //se nao há duplicatas,
                     mapaFilho.push_back(populacao[pai][i]); //adicionar ao mapa para preenchimento dos espacos vazios do filho
             }
@@ -251,10 +266,27 @@ void ga::cruzamento() {
     ga::populacao = linhagem;
 }
 
+bool ga::checarCorte(int corteInf, int corteSup, int colunasBloco, int chr) {
+
+    for (int d = 0; d < colunasBloco; d++) {
+        int varInf = corteInf + d * linhas;
+        int varSup = corteSup + d * linhas;
+
+        if (inputFardos[categoria(populacao[chr][corteInf])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][varInf])].tamanho == "grande") {
+            return false;
+        }
+        if (inputFardos[categoria(populacao[chr][corteSup])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][varSup])].tamanho == "grande") {
+            return false;
+        }
+    }
+    return true;
+}
+
 void ga::mutacao() {
     //mutacao por inversao
 
-    int colunasBloco = 3, tamanhoBloco = colunasBloco * linhas; //tamanho do bloco de inversao
+    int colunasBloco = 3;
+    int tamanhoBloco = colunasBloco * linhas;
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         double num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
@@ -268,19 +300,49 @@ void ga::mutacao() {
             if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
                 swap(corteInf, corteSup);
 
+            if (corteSup - corteInf <= colunasBloco) { //caso haja sobreposicao dos cortes
+                if (corteSup + colunasBloco >= colunas - colunasBloco)
+                    corteInf -= colunasBloco;
+                else
+                    corteSup += colunasBloco;
+            }
+
+            if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
+                swap(corteInf, corteSup);
+
             corteInf = corteInf * linhas, corteSup = corteSup * linhas;
 
             char letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back(); //analisando o ponto em que o fardo está sendo cortado
             int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o fardo para nao cortá-lo ao meio
-            corteInf = corteInf - ajusteInf * linhas, corteSup = corteSup - ajusteSup * linhas;
+            corteInf -= ajusteInf * linhas, corteSup -= ajusteSup * linhas;
 
-            //swap de blocos
+            for (int d = 0; d < colunasBloco; d++) {
+                int var = corteInf + d * linhas;
+
+                if (inputFardos[categoria(populacao[chr][corteInf])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][var])].tamanho == "grande") {
+                    corteInf = var;
+                    break;
+                }
+            }
+
+            for (int d = 0; d < colunasBloco; d++) {
+                int var = corteSup + d * linhas;
+
+                if (inputFardos[categoria(populacao[chr][corteSup])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][var])].tamanho == "grande") {
+                    corteSup = var;
+                    break;
+                }
+            }
+
+            if (corteSup - corteInf <= tamanhoBloco) //caso haja sobreposicao dos cortes
+                corteInf = corteSup;
+
             vector<string> temp(tamanhoBloco, "");
 
+            //swap de blocos
             copy(populacao[chr].begin() + corteInf, populacao[chr].begin() + corteInf + tamanhoBloco, temp.begin()); //corte 1
             copy(populacao[chr].begin() + corteSup, populacao[chr].begin() + corteSup + tamanhoBloco, populacao[chr].begin() + corteInf); //corte 2
             copy(temp.begin(), temp.end(), populacao[chr].begin() + corteSup);
         }
     }
-    ga::populacao = populacao;
 }

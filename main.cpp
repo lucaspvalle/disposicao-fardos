@@ -85,7 +85,7 @@ int main() {
     Parâmetros do algoritmo
     */
 
-    int populacaoTam = 20, geracaoTam = 100;
+    int populacaoTam = 20, geracaoTam = 10000;
     double mutacaoProb = 0.05;
 
     /*
@@ -123,7 +123,7 @@ int main() {
 
         fitval = algoritmo.fitness();
         algoritmo.cruzamento();
-        //algoritmo.mutacao();
+        algoritmo.mutacao();
     }
 
     fim = chrono::system_clock::now(); //parando cronometro
@@ -136,6 +136,7 @@ int main() {
     */
 
     chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
+
     cout << endl << "=== Tempo do AG ===" << endl;
     cout << segundos.count() << " segundos" << endl;
 

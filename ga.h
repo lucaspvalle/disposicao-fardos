@@ -40,6 +40,7 @@ public:
 
 	int categoria(string fardo);
 	vector<string> popularFardos(vector<string> filho, vector<string> mapa, int corte);
+	bool checarCorte(int corteInf, int corteSup, int colunasBloco, int chr);
 
 	/*
 	Funções do algoritmo genético
