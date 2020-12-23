@@ -119,9 +119,8 @@ Funções do algoritmo genético
 
 void ga::init() {
 
-    vector<int> fardos; //controle de fardos a serem misturados
-    int grandes = 0, pequenos = 0, total; //quantidade de fardos classificados como grandes e pequenos
-    string variantes = { "abc" }; //identificador de posicoes do fardo na matriz de acordo com seu tamanho
+    vector<string> fardos; //controle de fardos a serem misturados
+    int grandes = 0, pequenos = 0; //quantidade de fardos classificados como grandes e pequenos
 
     for (int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
         if (inputFardos[i].tamanho == "pequeno") //se o fardo for classificado como pequeno,
@@ -129,10 +128,9 @@ void ga::init() {
         else //se o fardo for classificado como grande,
             grandes = grandes + inputFardos[i].qtdade;
     }
-    total = pequenos + grandes; //quantidade total de fardos no sistema
 
-    for (int i = 1; i <= total; i++)
-        fardos.push_back(i); //adicionando os fardos no vetor de controle
+    for (int i = 1; i <= pequenos + grandes; i++)
+        fardos.push_back(to_string(i) + 'a'); //adicionando os fardos no vetor de controle
 
     ga::matrizTam = pequenos * 2 + grandes * 3; //calculando o tamanho necessario matriz para acomodar todos os fardos
     ga::colunas = matrizTam / linhas; //armazenando tamanho da coluna
@@ -140,39 +138,11 @@ void ga::init() {
     string2d populacao(populacaoTam, vector<string>(matrizTam, "")); //inicializando a populacao com <populacaoTam> individuos de tamanho <matrizTam>
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando os individuos (cromossomos)
-        int id = 0; //variavel de iteracao para identificacao dos fardos
 
-        shuffle(fardos.begin(), fardos.begin() + grandes, default_random_engine(time(NULL))); //misturando a ordem de fardos grandes a serem inicializados
-        shuffle(fardos.begin() + grandes + 1, fardos.end(), default_random_engine(time(NULL))); //misturando a ordem de fardos pequenos a serem inicializados
-
-        for (int i = 0; i < linhas; i++) {
-            for (int j = 0; j < colunas; j++) {
-                int var = i + j * linhas;
-                if (populacao[chr][var].empty()) { //se a posicao estiver vazia, preencher
-
-                    if (id < grandes) { //preenchimento de fardos grandes
-                        for (int d = 0; d < 3; d++) { //um fardo grande requer 3 posicoes verticais da matriz
-
-                            int varUm = i + (j + d) * linhas; //adicionando o fardo na linha i+j de 3 colunas
-                            int varDois = varUm + 1, fardoId = id + 1; //adicionando o fardo par na linha i+j+1 de 3 colunas
-
-                            populacao[chr][varUm] = to_string(fardos[id]) + variantes[d]; //adicionando a identificacao do fardo (123) com a sua posicao (a, b ou c)
-                            populacao[chr][varDois] = to_string(fardos[fardoId]) + variantes[d]; //adicionando a identificacao do fardo (123) com a sua posicao (a, b ou c)
-                        }
-                        id = id + 2; //atualizando o fardo a ser inicializado
-                    }
-
-                    else if ((id >= grandes) && (id < total)) {
-                        for (int d = 0; d < 2; d++) { //um fardo pequeno requer 2 posicoes horizontais da matriz
-
-                            int var = i + (j * linhas) + d; //adicionando o fardo nas linhas i e i+1
-                            populacao[chr][var] = to_string(fardos[id]) + variantes[d]; //adicionando a identificacao do fardo (123) com a sua posicao (a, b ou c)
-                        }
-                        id++; //atualizando o fardo a ser inicializado
-                    }
-                }
-            }
-        }
+        unsigned int semente = static_cast<unsigned int>(time(NULL));
+        shuffle(fardos.begin(), fardos.end(), default_random_engine(semente));
+        
+        populacao[chr] = popularFardos(populacao[chr], fardos, 0);
     }
     ga::populacao = populacao;
 }

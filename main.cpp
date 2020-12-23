@@ -85,7 +85,7 @@ int main() {
     Parâmetros do algoritmo
     */
 
-    int populacaoTam = 10, geracaoTam = 10;
+    int populacaoTam = 20, geracaoTam = 10000;
     double mutacaoProb = 0.05;
 
     /*
