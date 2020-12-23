@@ -4,21 +4,6 @@
 Funções de apoio
 */
 
-int* gerarCorte(int colunas) {
-
-    int corteInf = 0, corteSup = 0;
-
-    do { //gerando dois pontos de corte aleatorios
-        corteInf = rand() % colunas, corteSup = rand() % colunas;
-    } while (corteInf == corteSup);
-
-    if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
-        swap(corteInf, corteSup);
-
-    int saida[] = { corteInf, corteSup };
-    return saida;
-}
-
 int ga::categoria(string fardo) {
     //classificacao dos fardos de acordo com a procedencia
 
@@ -34,6 +19,37 @@ int ga::categoria(string fardo) {
             return tipo; //retornando o indice para identificacao do fardo
     }
     return 99; //caso esteja errado
+}
+
+limites ga::gerarCorte(int rangeCol, int chr, string operador) {
+
+    int corteInf = 0, corteSup = 0;
+
+    do { //gerando dois pontos de corte aleatorios
+        corteInf = rand() % rangeCol, corteSup = rand() % rangeCol;
+    } while (corteInf == corteSup);
+
+    if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
+        swap(corteInf, corteSup);
+
+    if (operador == "m") {
+        if (corteSup - corteInf <= colunasBloco) { //caso haja sobreposicao dos cortes
+            if (corteSup + colunasBloco >= colunas - colunasBloco)
+                corteInf -= colunasBloco;
+            else
+                corteSup += colunasBloco;
+        }
+    }
+
+    corteInf *= linhas, corteSup *= linhas;
+
+    char letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back();
+    int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a';
+    
+    corteInf -= ajusteInf * linhas, corteSup -= ajusteSup * linhas;
+
+    limites cortes = { corteInf, corteSup };
+    return cortes;
 }
 
 vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int corte) {
@@ -230,25 +246,15 @@ void ga::cruzamento() {
     while (linhagem.size() < populacaoTam) { //enquanto a linhagem nao for do tamanho desejado,
 
         int pai = selecao(), mae = selecao(); //selecionando dois genitores para linhagem
-        int corteInf = rand() % colunas, corteSup = rand() % colunas; //gerando dois pontos de corte aleatorios
-
-        while (corteSup == corteInf) //caso as colunas sejam as mesmas, gerar uma nova
-            corteSup = rand() % colunas;
-
-        if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
-            swap(corteInf, corteSup);
-
-        corteInf = corteInf * linhas, corteSup = corteSup * linhas;
-
-        //ajustando para nao cortar um fardo ao meio
-        char letraInf = populacao[mae][corteInf].back(), letraSup = populacao[mae][corteSup].back(); //verificando a posicao do fardo
-        int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o corte para o inicio do fardo
-        corteSup -= ajusteSup * linhas, corteInf -= ajusteInf * linhas;
+                                              
+        limites cortes = gerarCorte(colunas, mae, "c");
+        int corteInf = cortes.inf, corteSup = cortes.sup;
 
         vector<string> filho(matrizTam, ""), mapaFilho; //inicializando o filho e mapa de apoio
         copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf); //cruzando o filho com a informacao genetica da mae
 
         for (int i = 0; i < matrizTam; i++) { //para todas as posicoes da matriz do PAI,
+
             if (populacao[pai][i].back() == 'a') { //caso o fardo esteja em sua posicao "a" (inicial),
                 auto filhoIt = find(filho.begin() + corteInf, filho.begin() + corteSup, populacao[pai][i]); //iterar em busca de duplicatas do corte proveniente da MAE
                 
@@ -266,80 +272,30 @@ void ga::cruzamento() {
     ga::populacao = linhagem;
 }
 
-bool ga::checarCorte(int corteInf, int corteSup, int colunasBloco, int chr) {
-
-    for (int d = 0; d < colunasBloco; d++) {
-        int varInf = corteInf + d * linhas;
-        int varSup = corteSup + d * linhas;
-
-        if (inputFardos[categoria(populacao[chr][corteInf])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][varInf])].tamanho == "grande") {
-            return false;
-        }
-        if (inputFardos[categoria(populacao[chr][corteSup])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][varSup])].tamanho == "grande") {
-            return false;
-        }
-    }
-    return true;
-}
-
 void ga::mutacao() {
     //mutacao por inversao
 
-    int colunasBloco = 3;
     int tamanhoBloco = colunasBloco * linhas;
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         double num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
         if (num_aleatorio <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
 
-            int corteInf = rand() % (colunas - colunasBloco), corteSup = rand() % (colunas - colunasBloco); //gerando um ponto de corte aleatorio
-
-            while (corteSup == corteInf) //caso as colunas sejam as mesmas, gerar uma nova
-                corteSup = rand() % (colunas - colunasBloco);
-
-            if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
-                swap(corteInf, corteSup);
-
-            if (corteSup - corteInf <= colunasBloco) { //caso haja sobreposicao dos cortes
-                if (corteSup + colunasBloco >= colunas - colunasBloco)
-                    corteInf -= colunasBloco;
-                else
-                    corteSup += colunasBloco;
-            }
-
-            if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
-                swap(corteInf, corteSup);
-
-            corteInf = corteInf * linhas, corteSup = corteSup * linhas;
-
-            char letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back(); //analisando o ponto em que o fardo está sendo cortado
-            int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //ajustando o fardo para nao cortá-lo ao meio
-            corteInf -= ajusteInf * linhas, corteSup -= ajusteSup * linhas;
+            limites cortes = gerarCorte(colunas - colunasBloco, chr, "m");
+            int corteInf = cortes.inf, corteSup = cortes.sup;
 
             for (int d = 0; d < colunasBloco; d++) {
-                int var = corteInf + d * linhas;
+                int varInf = corteInf + d * linhas, tipoInf = categoria(populacao[chr][varInf]);
+                int varSup = corteSup + d * linhas, tipoSup = categoria(populacao[chr][varSup]);
 
-                if (inputFardos[categoria(populacao[chr][corteInf])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][var])].tamanho == "grande") {
-                    corteInf = var;
-                    break;
-                }
+                if (inputFardos[categoria(populacao[chr][corteInf])].tamanho == "pequeno" && inputFardos[tipoInf].tamanho == "grande")
+                    corteInf = varInf;
+
+                if (inputFardos[categoria(populacao[chr][corteSup])].tamanho == "pequeno" && inputFardos[tipoSup].tamanho == "grande")
+                    corteSup = varSup;
             }
-
-            for (int d = 0; d < colunasBloco; d++) {
-                int var = corteSup + d * linhas;
-
-                if (inputFardos[categoria(populacao[chr][corteSup])].tamanho == "pequeno" && inputFardos[categoria(populacao[chr][var])].tamanho == "grande") {
-                    corteSup = var;
-                    break;
-                }
-            }
-
-            if (corteSup - corteInf <= tamanhoBloco) //caso haja sobreposicao dos cortes
-                corteInf = corteSup;
 
             vector<string> temp(tamanhoBloco, "");
-
-            //swap de blocos
             copy(populacao[chr].begin() + corteInf, populacao[chr].begin() + corteInf + tamanhoBloco, temp.begin()); //corte 1
             copy(populacao[chr].begin() + corteSup, populacao[chr].begin() + corteSup + tamanhoBloco, populacao[chr].begin() + corteInf); //corte 2
             copy(temp.begin(), temp.end(), populacao[chr].begin() + corteSup);

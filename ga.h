@@ -13,6 +13,10 @@ typedef struct {
 	float peso;
 	string procedencia, tamanho;
 } planilha;
+typedef struct {
+	int inf, sup;
+} limites;
+
 
 class ga { //classe do algoritmo genetico
 
@@ -22,6 +26,7 @@ public:
 	double mutacaoProb; //probabilidade de mutacao
 	const int linhas = 4; //quantidade de linhas da matriz
 	int matrizTam, colunas;
+	int colunasBloco = 3; //colunas invertidas na mutacao
 
 	string2d populacao; //populacao de cromossomos
 	vector<int> fitval; //valores fitness da populacao
@@ -39,8 +44,8 @@ public:
 	*/
 
 	int categoria(string fardo);
+	limites gerarCorte(int rangeCol, int chr, string operador);
 	vector<string> popularFardos(vector<string> filho, vector<string> mapa, int corte);
-	bool checarCorte(int corteInf, int corteSup, int colunasBloco, int chr);
 
 	/*
 	Funções do algoritmo genético
