@@ -5,23 +5,24 @@ Funções de apoio
 */
 
 int ga::categoria(string fardo) {
-    //classificacao dos fardos de acordo com a procedencia
+    //classificacao dos fardos de acordo com a procedencia por meio da soma acumulada
 
-    int id, cumsum = 0; //soma acumulada
+    int id, cumsum = 0;
 
     fardo.pop_back(); //retirar o ultimo caracter da string (o "b" de "123b", por ex.)
     id = stoi(fardo); //converter a string "123" para int 123 (por ex.)
 
-    for (int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct
-        cumsum += inputFardos[tipo].qtdade; //acumulando a soma
+    for (int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct de tipos de fardos
+        cumsum += inputFardos[tipo].qtdade;
 
         if (id <= cumsum)
-            return tipo; //retornando o indice para identificacao do fardo
+            return tipo;
     }
     return 99; //caso esteja errado
 }
 
 limites ga::gerarCorte(int rangeCol, int chr, string operador) {
+    //gerador de cortes para os operadores
 
     int corteInf = 0, corteSup = 0;
 
@@ -32,31 +33,30 @@ limites ga::gerarCorte(int rangeCol, int chr, string operador) {
     if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
         swap(corteInf, corteSup);
 
-    if (operador == "m") {
-        if (corteSup - corteInf <= colunasBloco) { //caso haja sobreposicao dos cortes
-            if (corteSup + colunasBloco >= colunas - colunasBloco)
+    if (operador == "m") { //caso os cortes sejam para o operador de mutacao,
+        if (corteSup - corteInf <= colunasBloco) { //caso haja sobreposicao dos cortes,
+            if (corteSup + colunasBloco >= colunas - colunasBloco) //se o corte superior estiver no fim do bloco e sem espaco para a inversao de colunas,
                 corteInf -= colunasBloco;
-            else
+            else //caso haja espaco no corte superior para empurrar o corte para a frente,
                 corteSup += colunasBloco;
         }
     }
-
     corteInf *= linhas, corteSup *= linhas;
 
-    char letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back();
-    int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a';
-    
-    corteInf -= ajusteInf * linhas, corteSup -= ajusteSup * linhas;
+    //ajustando o corte para nao pegar um fardo ao meio
+    char letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back(); //obtendo a identificacao de posicao do fardo (a, b ou c)
+    int ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //calculando a distancia do fardo em relacao à posicao inicial (a)
+    corteInf -= ajusteInf * linhas, corteSup -= ajusteSup * linhas; //ajustando
 
-    limites cortes = { corteInf, corteSup };
+    limites cortes = { corteInf, corteSup }; //struct para retornar os valores gerados
     return cortes;
 }
 
 vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int corte) {
     //suporte de preenchimento de fardos para operador OX
     
-    string variantes = { "abc" };
-    vector<string> pequenos, grandes;
+    string variantes = { "abc" }; //identificador de posicoes do fardo na matriz
+    vector<string> pequenos, grandes; //vetores de apoio para alocacao dos fardos
 
     for (int idx = 0; idx < mapa.size(); idx++) { //classificando os fardos a serem alocados
         if (inputFardos[categoria(mapa[idx])].tamanho == "grande") //se grandes,
@@ -65,7 +65,7 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int 
             pequenos.push_back(mapa[idx]);
     }
 
-    int i = corte / linhas, j = 0, idx = 0;
+    int i = corte / linhas, j = 0, idx = 0; //iniciando o preenchimento a partir do corte superior na linha 0
     while (grandes.size() != 0) { //enquanto houver fardos grandes a serem alocados,
 
         int var = j + (i * linhas); //ponto de insercao
@@ -118,6 +118,7 @@ Funções do algoritmo genético
 */
 
 void ga::init() {
+    //inicializador de populacao para o algoritmo
 
     vector<string> fardos; //controle de fardos a serem misturados
     int grandes = 0, pequenos = 0; //quantidade de fardos classificados como grandes e pequenos
@@ -129,20 +130,20 @@ void ga::init() {
             grandes = grandes + inputFardos[i].qtdade;
     }
 
-    for (int i = 1; i <= pequenos + grandes; i++)
-        fardos.push_back(to_string(i) + 'a'); //adicionando os fardos no vetor de controle
+    for (int i = 1; i <= pequenos + grandes; i++) //vetor de apoio para a alocacao de fardos
+        fardos.push_back(to_string(i) + 'a');
 
     ga::matrizTam = pequenos * 2 + grandes * 3; //calculando o tamanho necessario matriz para acomodar todos os fardos
-    ga::colunas = matrizTam / linhas; //armazenando tamanho da coluna
+    ga::colunas = matrizTam / linhas; //calculando tamanho da coluna
 
     string2d populacao(populacaoTam, vector<string>(matrizTam, "")); //inicializando a populacao com <populacaoTam> individuos de tamanho <matrizTam>
-
+    
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando os individuos (cromossomos)
 
-        unsigned int semente = static_cast<unsigned int>(time(NULL));
-        shuffle(fardos.begin(), fardos.end(), default_random_engine(semente));
+        unsigned int semente = static_cast<unsigned int>(time(NULL)); //semente para geracao de numeros aleatorios
+        shuffle(fardos.begin(), fardos.end(), default_random_engine(semente)); //misturando a ordem de fardos a serem alocados
         
-        populacao[chr] = popularFardos(populacao[chr], fardos, 0);
+        populacao[chr] = popularFardos(populacao[chr], fardos, 0); //preenchendo os espacos vazios do individuo
     }
     ga::populacao = populacao;
 }
@@ -153,48 +154,49 @@ vector<int> ga::fitness() {
     vector<int> val(populacaoTam, 0); //inicializando o valor fitness de cada cromossomo igual a 0
     
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
+        
+        //vetor de incidencia dos tipos de fardos (sim/nao (1/0)) nas colunas da matriz
         vector<vector<int>> projecao(inputFardos.size(), vector<int>(colunas, 0));
 
         for (int i = 0; i < matrizTam; i++) {
             
-            int col = i / 4;
+            int col = i / 4; //armazenando a coluna da posicao iterada
             int boxFardo = inputFardos[categoria(populacao[chr][i])].box;
 
-            for (int tipo = 0; tipo < inputFardos.size(); tipo++)
+            for (int tipo = 0; tipo < inputFardos.size(); tipo++) //iterando a struct de tipos de fardos em busca do indice do box
                 if (inputFardos[tipo].box == boxFardo) {
-                    projecao[tipo][col] = 1;
+                    projecao[tipo][col] = 1; //1 caso haja um fardo <tipo> na coluna <col>, 0 caso contrario 
                     break;
                 }
         }
 
-        for (int tipo = 0; tipo < inputFardos.size(); tipo++) {
-            int colBase = -1;
-            for (int col = 0; col < colunas; col++) {
+        for (int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct para calcular a distancia projetada de cada tipo de fardo
+            int colBase = -1; //inicializando a coluna base como -1 para ser sobrescrita pela primeira coluna com incidencia do fardo <tipo>
+            for (int col = 0; col < colunas; col++) { //iterando todas as colunas da matriz
 
-                if (colBase == -1 && projecao[tipo][col] == 1)
+                if (colBase == -1 && projecao[tipo][col] == 1) //se for a primeira coluna do vetor com incidencia,
                     colBase = col;
 
-                if (projecao[tipo][col] == 1) {
+                if (projecao[tipo][col] == 1) { //somar a distancia entre as incidencias de fardos de mesmo tipo
                     val[chr] += (col - colBase);
-                    colBase = col;
+                    colBase = col; //atualizando a coluna base para comparacao
                 }
             }
         }
     }
-
     ga::fitval = val;
     return val;
 }
 
 int ga::selecao() {
-    //selecao de individuos para linhagem
+    //selecao de individuos por torneios binarios
 
-    int vencedor = rand() % populacaoTam, desafiante = rand() % populacaoTam; //gerando dois individuos aleatorios
+    int vencedor = 0, desafiante = 0;
+    do { //gerando dois individuos aleatorios
+        vencedor = rand() % populacaoTam, desafiante = rand() % populacaoTam;
+    } while (vencedor == desafiante);
 
-    while (vencedor == desafiante) //caso os individuos sejam os mesmos, gerar um novo
-        desafiante = rand() % populacaoTam;
-
-    if (fitval[desafiante] > fitval[vencedor]) //o vencedor é quem tiver MAIOR valor fitness
+    if (fitval[desafiante] > fitval[vencedor]) //o vencedor é quem possuir MAIOR valor fitness
         vencedor = desafiante;
 
     return vencedor;
@@ -203,25 +205,23 @@ int ga::selecao() {
 void ga::cruzamento() {
     //Order Crossover (OX)
 
-    int idx = 0;
     string2d linhagem;
 
     //elitismo :: continuar com o melhor individuo na proxima geracao
     int melhor = max_element(fitval.begin(), fitval.end()) - fitval.begin();
+    linhagem.push_back(populacao[melhor]);
 
-    linhagem.push_back(vector<string>());
-    linhagem[idx] = populacao[melhor];
-    idx++;
-
-    while (linhagem.size() < populacaoTam) { //enquanto a linhagem nao for do tamanho desejado,
+    for (int chr = 1; chr < populacaoTam; chr++) { //iterando ate que a linhagem tenha o tamanho da populacao
 
         int pai = selecao(), mae = selecao(); //selecionando dois genitores para linhagem
                                               
-        limites cortes = gerarCorte(colunas, mae, "c");
+        limites cortes = gerarCorte(colunas, mae, "c"); //cortes de apoio para o cruzamento
         int corteInf = cortes.inf, corteSup = cortes.sup;
 
-        vector<string> filho(matrizTam, ""), mapaFilho; //inicializando o filho e mapa de apoio
-        copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf); //cruzando o filho com a informacao genetica da mae
+        vector<string> filho(matrizTam, ""), mapaFilho;
+        
+        //cruzando o filho com a informacao genetica da MAE em um intervalo pré-definido de corte
+        copy(populacao[mae].begin() + corteInf, populacao[mae].begin() + corteSup, filho.begin() + corteInf);
 
         for (int i = 0; i < matrizTam; i++) { //para todas as posicoes da matriz do PAI,
 
@@ -233,11 +233,7 @@ void ga::cruzamento() {
             }
         }
         filho = popularFardos(filho, mapaFilho, corteSup); //populando o filho fora da area de corte
-
-        //adicionando os filhos na linhagem
-        linhagem.push_back(vector<string>());
-        linhagem[idx] = filho;
-        idx++;
+        linhagem.push_back(filho);
     }
     ga::populacao = linhagem;
 }
@@ -251,24 +247,22 @@ void ga::mutacao() {
         double num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
         if (num_aleatorio <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
 
-            limites cortes = gerarCorte(colunas - colunasBloco, chr, "m");
+            limites cortes = gerarCorte(colunas - colunasBloco, chr, "m"); //cortes de apoio para a mutacao
             int corteInf = cortes.inf, corteSup = cortes.sup;
 
-            for (int d = 0; d < colunasBloco; d++) {
-                int varInf = corteInf + d * linhas, tipoInf = categoria(populacao[chr][varInf]);
-                int varSup = corteSup + d * linhas, tipoSup = categoria(populacao[chr][varSup]);
+            for (int d = 0; d < colunasBloco; d++) { //verificando se o intervalo está cortando ao meio algum fardo grande
+                int varInf = corteInf + d * linhas, tipoInf = categoria(populacao[chr][varInf]); //verificacao do corte inferior
+                int varSup = corteSup + d * linhas, tipoSup = categoria(populacao[chr][varSup]); //verificacao do corte superior
 
+                //se o primeiro fardo for pequeno e houver um fardo grande no intervalo, reajustar o intervalo de corte
                 if (inputFardos[categoria(populacao[chr][corteInf])].tamanho == "pequeno" && inputFardos[tipoInf].tamanho == "grande")
                     corteInf = varInf;
 
                 if (inputFardos[categoria(populacao[chr][corteSup])].tamanho == "pequeno" && inputFardos[tipoSup].tamanho == "grande")
                     corteSup = varSup;
             }
-
-            vector<string> temp(tamanhoBloco, "");
-            copy(populacao[chr].begin() + corteInf, populacao[chr].begin() + corteInf + tamanhoBloco, temp.begin()); //corte 1
-            copy(populacao[chr].begin() + corteSup, populacao[chr].begin() + corteSup + tamanhoBloco, populacao[chr].begin() + corteInf); //corte 2
-            copy(temp.begin(), temp.end(), populacao[chr].begin() + corteSup);
+            //swap nos intervalos dos cortes inferior e superior de acordo com o tamanho do bloco de troca
+            swap_ranges(populacao[chr].begin() + corteInf, populacao[chr].begin() + corteInf + tamanhoBloco, populacao[chr].begin() + corteSup);
         }
     }
 }
