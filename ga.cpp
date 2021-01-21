@@ -125,9 +125,9 @@ void ga::init() {
 
     for (int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
         if (inputFardos[i].tamanho == "pequeno") //se o fardo for classificado como pequeno,
-            pequenos = pequenos + inputFardos[i].qtdade;
+            pequenos += inputFardos[i].qtdade;
         else //se o fardo for classificado como grande,
-            grandes = grandes + inputFardos[i].qtdade;
+            grandes += inputFardos[i].qtdade;
     }
 
     for (int i = 1; i <= pequenos + grandes; i++) //vetor de apoio para a alocacao de fardos
