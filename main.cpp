@@ -2,6 +2,7 @@
 #include <Windows.h> //MessageBoxA
 #include <chrono>
 #include "ga.h"
+#include "testes.h"
 using namespace std;
 
 vector<planilha> ler_planilha(int criterio_peso) {
@@ -77,75 +78,83 @@ void mapa(ga algoritmo) {
     arq.close();
 }
 
+//int main() {
+//
+//    //FreeConsole();  //fechar o prompt de comando durante a execucao
+//
+//    /*
+//    Parâmetros do algoritmo
+//    */
+//
+//    int populacaoTam = 20, geracaoTam = 10;
+//    double mutacaoProb = 0.05;
+//
+//    /*
+//    Inicialização de variáveis
+//    */
+//
+//    vector<planilha> inputFardos;
+//    vector<int> fitval;
+//
+//    chrono::time_point<chrono::system_clock> comeco, fim; //cronometros
+//
+//    int criterio_peso = 220; //classificacao de tamanhos de fardos
+//    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
+//    
+//    /*
+//    Inicialização do algoritmo
+//    */
+//
+//    inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
+//
+//    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
+//    algoritmo.init(); //inicializando a populacao para evolucao
+//    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
+//
+//    /*
+//    Evolução
+//    */
+//
+//    cout << "=== Valores Fitness ===" << endl;
+//    cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
+//
+//    comeco = chrono::system_clock::now(); //iniciando cronometro
+//
+//    for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
+//
+//        fitval = algoritmo.fitness();
+//        algoritmo.cruzamento();
+//        algoritmo.mutacao();
+//    }
+//
+//    fim = chrono::system_clock::now(); //parando cronometro
+//
+//    fitval = algoritmo.fitness();
+//    cout << "Final: " << *max_element(fitval.begin(), fitval.end()) << endl;
+//
+//    /*
+//    Cronômetro
+//    */
+//
+//    chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
+//
+//    cout << endl << "=== Tempo do AG ===" << endl;
+//    cout << segundos.count() << " segundos" << endl;
+//
+//    /*
+//    Saída
+//    */
+//
+//    //mapa(algoritmo);
+//    //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
+//
+//    return 0;
+//}
+
 int main() {
 
-    //FreeConsole();  //fechar o prompt de comando durante a execucao
-
-    /*
-    Parâmetros do algoritmo
-    */
-
-    int populacaoTam = 20, geracaoTam = 10;
-    double mutacaoProb = 0.05;
-
-    /*
-    Inicialização de variáveis
-    */
-
-    vector<planilha> inputFardos;
-    vector<int> fitval;
-
-    chrono::time_point<chrono::system_clock> comeco, fim; //cronometros
-
-    int criterio_peso = 220; //classificacao de tamanhos de fardos
-    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
-    
-    /*
-    Inicialização do algoritmo
-    */
-
-    inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
-
-    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
-    algoritmo.init(); //inicializando a populacao para evolucao
-    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
-
-    /*
-    Evolução
-    */
-
-    cout << "=== Valores Fitness ===" << endl;
-    cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
-
-    comeco = chrono::system_clock::now(); //iniciando cronometro
-
-    for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
-
-        fitval = algoritmo.fitness();
-        algoritmo.cruzamento();
-        algoritmo.mutacao();
-    }
-
-    fim = chrono::system_clock::now(); //parando cronometro
-
-    fitval = algoritmo.fitness();
-    cout << "Final: " << *max_element(fitval.begin(), fitval.end()) << endl;
-
-    /*
-    Cronômetro
-    */
-
-    chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
-
-    cout << endl << "=== Tempo do AG ===" << endl;
-    cout << segundos.count() << " segundos" << endl;
-
-    /*
-    Saída
-    */
-
-    //mapa(algoritmo);
-    //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
+    testes Teste;
+    Teste.parametros();
 
     return 0;
 }
