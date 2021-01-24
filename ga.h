@@ -7,33 +7,31 @@
 using namespace std;
 
 typedef vector<vector<string>> string2d;
+
 typedef struct {
 	//armazenamento de dados da planilha
 	int box, qtdade;
 	float peso;
 	string procedencia, tamanho;
 } planilha;
+
 typedef struct {
 	int inf, sup;
 } limites;
 
-
 class ga { //classe do algoritmo genetico
-
 public:
 
 	int populacaoTam; //tamanho da populacao
 	double mutacaoProb; //probabilidade de mutacao
 	const int linhas = 4; //quantidade de linhas da matriz
 	int matrizTam, colunas;
-	int colunasBloco = 3; //colunas invertidas na mutacao
 
 	string2d populacao; //populacao de cromossomos
 	vector<int> fitval; //valores fitness da populacao
 	vector<planilha> inputFardos; //dados de inputs dos fardos
 
 	ga(int pop, double probabilidade, vector<planilha> input) {
-
 		populacaoTam = pop;
 		mutacaoProb = probabilidade;
 		inputFardos = input;

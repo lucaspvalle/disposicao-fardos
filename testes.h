@@ -1,8 +1,5 @@
 #pragma once
-#include <random>
-#include <vector>
 #include <cmath>
-#include <string>
 #include <chrono>
 #include <fstream>
 #include "ga.h"
@@ -16,6 +13,5 @@ public:
 	vector<planilha> gerarInstancias(int nivel_fardos, int nivel_proc, double proporcao, int classes);
 	void principal(int populacaoTam, int geracaoTam, double mutacaoProb);
 	void parametros();
-
 };
 

@@ -13,26 +13,22 @@ double testes::triangular(double a, double b, double c) {
 
 vector<int> histograma(vector<double> cores, int classes) {
     
-    double max, min, largura, a, b;
+    double max, min, largura, intervalo;
     vector<int> bins; //vetor com as cores divididas em classes
 
-    max = *max_element(cores.begin(), cores.end()); //valor MAXIMO da distribuicao de cores
+    max = *max_element(cores.begin(), cores.end()) + 0.000001; //valor MAXIMO da distribuicao de cores
     min = *min_element(cores.begin(), cores.end()); //valor MINIMO da distribuicao de cores
 
-    largura = (max - min) / (double)classes; //range de cada intervalo
+    largura = ((max - min) / (double)classes); //range de cada intervalo
 
     for (int cor = 0; cor < cores.size(); cor++) { //iterando cada cor para definir sua classe pertencente
-
-        a = min; //comecando a iteracao no primeiro intervalo (valor minimo ate o valor minimo + largura, e assim vai...)
         for (int i = 0; i < classes; i++) { //iterando as classes para cada cor, até encontrar a pertencente
 
-            b = a + largura;
-            
-            if (cores[cor] >= a && cores[cor] <= b) { //se o valor de cor estiver dentro do intervalo, continuar
+            intervalo = min + i * largura;
+            if (cores[cor] >= intervalo && cores[cor] < intervalo + largura) { //se o valor de cor estiver dentro do intervalo, continuar
                 bins.push_back(i);
                 break;
             }
-            a = b;
         }
     }
     return bins;
@@ -103,8 +99,10 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
         while (grandes % 2 != 0) //corrigindo a quantidade de fardos grandes para o melhor aproveitamento da linha de abertura
             grandes++;
 
-        inputFardos.push_back({ 0, pequenos, 200, to_string(bins[i]), "pequenos" }); //input dos fardos pequenos para o algoritmo
-        inputFardos.push_back({ 0, grandes, 230, to_string(bins[i]), "grandes" }); //input dos fardos grandes para o algoritmo
+        if (pequenos != 0)
+            inputFardos.push_back({ bins[i], pequenos, 200, to_string(bins[i]), "pequeno" }); //input dos fardos pequenos para o algoritmo
+        if (grandes != 0)
+        inputFardos.push_back({ bins[i], grandes, 230, to_string(bins[i]), "grande" }); //input dos fardos grandes para o algoritmo
     }
     return inputFardos;
 }
@@ -136,6 +134,7 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     */
 
     ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
+
     algoritmo.init(); //inicializando a populacao para evolucao
     fitval = algoritmo.fitness(); //avaliando a populacao inicializada
     int inicial = *max_element(fitval.begin(), fitval.end()); //valor fitness inicial da heuristica construtiva
@@ -167,6 +166,7 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     if (arq.is_open()) { //se aberto, escrever os parametros
         arq << populacaoTam << ',' << geracaoTam << ',' << mutacaoProb << ',' << inicial << ',' << final << ',' << tempo << ',' << endl;
     }
+    arq.close();
 }
 
 void testes::parametros() {

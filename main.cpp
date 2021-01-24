@@ -1,47 +1,34 @@
-#include <fstream> //std::open
 #include <Windows.h> //MessageBoxA
-#include <chrono>
 #include "ga.h"
 #include "testes.h"
 using namespace std;
 
-vector<planilha> ler_planilha(int criterio_peso) {
+vector<planilha> ler_planilha(float criterio_peso) {
     //leitura de arquivo CSV com inputs de fardos
 
     ifstream arq;
     vector<planilha> inputFardos;
-    string box, procedencia, peso, qtdade;
+    string box, procedencia, peso, qtdade, tamanho;
 
-    arq.open("temp.csv", ios::in); //abertura do arquivo
-    if (arq.is_open()) { //verificacao de abertura
-
-        int i = 0; //iteracao de linhas
+    arq.open("temp.csv", ios::in);
+    if (arq.is_open()) {
 
         //modelo do arquivo: "box,procedencia,peso,qtdade\n"
-        while (getline(arq, box, ',')) { //obtendo a primeira informacao do arquivo (id do box)
-            inputFardos.push_back(planilha());
-
-            inputFardos[i].box = stoi(box);
-
-            getline(arq, procedencia, ','); //obtendo a proxima informacao do arquivo (procedencia do fardo)
-            inputFardos[i].procedencia = procedencia;
-
+        while (getline(arq, box, ',')) {
+            getline(arq, procedencia, ',');
             getline(arq, peso, ',');
-            inputFardos[i].peso = stof(peso);
-
             getline(arq, qtdade);
-            inputFardos[i].qtdade = stoi(qtdade);
 
-            if (inputFardos[i].peso < criterio_peso) //caso o peso do fardo seja menor, ele é classificado como pequeno
-                inputFardos[i].tamanho = "pequeno";
+            if (stof(peso) < criterio_peso) //caso o peso do fardo seja menor, ele é classificado como pequeno
+                tamanho = "pequeno";
             else //caso contrario, é classificado como grande
-                inputFardos[i].tamanho = "grande";
+                tamanho = "grande";
 
-            i++; //iterando o contador de fardos para armazenar no proximo espaco do struct
+            inputFardos.push_back({ stoi(box), stoi(qtdade), stof(peso), procedencia, tamanho }); //armazenando as informacoes
         }
-        arq.close(); //encerrando o arquivo
+        arq.close();
     }
-    else {
+    else { //caso o arquivo nao seja aberto,
         MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
         exit(1);
     }
@@ -52,15 +39,17 @@ void mapa(ga algoritmo) {
     //saida do mapa de disposicao de fardos
 
     ofstream arq;
-    auto melhor = max_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin(); //indice do individuo com maior valor fitness
+    int melhor, tipo;
+
+    melhor = max_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin(); //indice do individuo com maior valor fitness
     
-    arq.open("temp.csv", ios::trunc); //inicializando arquivo csv a ser escrito
-    if (arq.is_open()) { //apenas escrever se o arquivo estiver aberto
+    arq.open("temp.csv", ios::trunc);
+    if (arq.is_open()) {
 
         for (int i = 0; i < algoritmo.populacao[melhor].size(); i++) { //iterando todos os espacos da matriz do melhor individuo
             if (!algoritmo.populacao[melhor][i].empty()) { //caso o espaco esteja preenchido,
 
-                int tipo = algoritmo.categoria(algoritmo.populacao[melhor][i]); //obter a categoria do fardo
+                tipo = algoritmo.categoria(algoritmo.populacao[melhor][i]); //obter a categoria do fardo
 
                 if (algoritmo.populacao[melhor][i].back() == 'a') //se a identificao for "a" (primeira posicao do fardo,
                     arq << algoritmo.inputFardos[tipo].procedencia << " (" << algoritmo.inputFardos[tipo].box << "),"; //escrever a procedencia e o box do fardo
@@ -98,7 +87,7 @@ void mapa(ga algoritmo) {
 //
 //    chrono::time_point<chrono::system_clock> comeco, fim; //cronometros
 //
-//    int criterio_peso = 220; //classificacao de tamanhos de fardos
+//    float criterio_peso = 220; //classificacao de tamanhos de fardos
 //    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
 //    
 //    /*
