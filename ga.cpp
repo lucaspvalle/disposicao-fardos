@@ -21,11 +21,40 @@ int ga::categoria(string fardo) {
     return NULL;
 }
 
+bool ga::checarLimites(int corte, int chr) {
+
+    char letra;
+    int var, tipo;
+
+    for (int i = 0; i < linhas; i++) {
+        var = corte + i;
+        letra = populacao[chr][var].back(), tipo = categoria(populacao[chr][var]);
+
+        if (inputFardos[tipo].tamanho == "grande" && letra != 'a')
+            return true;
+    }
+    return false;
+}
+
+bool ga::checarBloco(int corte, int chr) {
+
+    int var, tipo, bloco = 3;
+
+    for (int d = 0; d < bloco; d++) { //verificando se o intervalo está cortando ao meio algum fardo grande
+        for (int i = 0; i < linhas; i++) {
+            var = corte + d * linhas + i, tipo = categoria(populacao[chr][var]);
+
+            if (inputFardos[categoria(populacao[chr][corte])].tamanho == "pequeno" && inputFardos[tipo].tamanho == "grande")
+                return true;
+        }
+    }
+    return false;
+}
+
 limites ga::gerarCorte(int range, int chr, string operador) {
     //gerador de cortes para os operadores
     
-    char letraInf, letraSup;
-    int corteInf = 0, corteSup = 0, bloco = 3, ajusteInf, ajusteSup, varInf, varSup, tipoInf, tipoSup;
+    int corteInf = 0, corteSup = 0, bloco = 3;
 
     do { //gerando dois pontos de corte aleatorios
         corteInf = rand() % range, corteSup = rand() % range;
@@ -44,28 +73,12 @@ limites ga::gerarCorte(int range, int chr, string operador) {
     }
     corteInf *= linhas, corteSup *= linhas;
 
-    for (int i = 0; i < linhas; i++) { //ajustando o corte para nao pegar um fardo ao meio
-        varInf = corteInf + i, varSup = corteSup + i;        
-        tipoInf = categoria(populacao[chr][varInf]), tipoSup = categoria(populacao[chr][varSup]);
+    while (checarLimites(corteInf, chr))
+        corteInf -= linhas;
+    
+    while (checarLimites(corteSup, chr))
+        corteSup -= linhas;
 
-        if (inputFardos[tipoInf].tamanho == "grande") {
-            letraInf = populacao[chr][varInf].back();
-
-            if (letraInf != 'a') {
-                ajusteInf = (int)letraInf - (int)'a'; //calculando a distancia do fardo em relacao à posicao inicial (a)
-                corteInf -= ajusteInf * linhas;
-            }
-        }
-
-        if (inputFardos[tipoSup].tamanho == "grande") {
-            letraSup = populacao[chr][varSup].back();
-
-            if (letraSup != 'a') {
-                ajusteSup = (int)letraSup - (int)'a'; //calculando a distancia do fardo em relacao à posicao inicial (a)
-                corteSup -= ajusteSup * linhas;
-            }
-        }
-    }
     return { corteInf, corteSup };
 }
 
@@ -150,7 +163,6 @@ void ga::init() {
 
     vector<string> fardos; //controle de fardos a serem misturados
     int grandes = 0, pequenos = 0; //quantidade de fardos classificados como grandes e pequenos
-    unsigned int semente; //semente para geracao de numeros aleatorios
 
     for (int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
         if (inputFardos[i].tamanho == "pequeno") //se o fardo for classificado como pequeno,
@@ -168,8 +180,7 @@ void ga::init() {
     string2d populacao(populacaoTam, vector<string>(matrizTam, "")); //inicializando a populacao com <populacaoTam> individuos de tamanho <matrizTam>
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando os individuos (cromossomos)
 
-        semente = static_cast<unsigned int>(time(NULL));
-        shuffle(fardos.begin(), fardos.end(), default_random_engine(semente)); //misturando a ordem de fardos a serem alocados
+        random_shuffle(fardos.begin(), fardos.end()); //misturando a ordem de fardos a serem alocados
         populacao[chr] = popularFardos(populacao[chr], fardos, 0); //preenchendo os espacos vazios do individuo
     }
     ga::populacao = populacao;
@@ -206,7 +217,7 @@ vector<int> ga::fitness() {
                     if (base == -1) //se for a primeira coluna do vetor com incidencia,
                         base = col;
 
-                    valores[chr] += (int)pow(col - base, 1);
+                    valores[chr] += (int)pow(col - base, 2);
                     base = col; //atualizando a coluna base para comparacao
                 }
             }
@@ -264,11 +275,11 @@ void ga::cruzamento() {
 }
 
 void ga::mutacao() {
-    //mutacao por inversao
+    //mutacao por troca
 
     limites cortes;
     double num_aleatorio;
-    int varInf, varSup, tipoInf, tipoSup, bloco = 3, tamanho = bloco * linhas;
+    int bloco = 3, tamanho = bloco * linhas;
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
@@ -276,17 +287,12 @@ void ga::mutacao() {
 
             cortes = gerarCorte(colunas - bloco, chr, "m"); //cortes de apoio para a mutacao
 
-            for (int d = 0; d < bloco; d++) { //verificando se o intervalo está cortando ao meio algum fardo grande
-                varInf = cortes.inf + d * linhas, tipoInf = categoria(populacao[chr][varInf]); //verificacao do corte inferior
-                varSup = cortes.sup + d * linhas, tipoSup = categoria(populacao[chr][varSup]); //verificacao do corte superior
+            while (checarBloco(cortes.inf, chr))
+                cortes.inf += linhas;
 
-                //se o primeiro fardo for pequeno e houver um fardo grande no intervalo, reajustar o intervalo de corte
-                if (inputFardos[categoria(populacao[chr][cortes.inf])].tamanho == "pequeno" && inputFardos[tipoInf].tamanho == "grande")
-                    cortes.inf = varInf;
+            while (checarBloco(cortes.sup, chr))
+                cortes.sup += linhas;
 
-                if (inputFardos[categoria(populacao[chr][cortes.sup])].tamanho == "pequeno" && inputFardos[tipoSup].tamanho == "grande")
-                    cortes.sup = varSup;
-            }
             //swap nos intervalos dos cortes inferior e superior de acordo com o tamanho do bloco de troca
             swap_ranges(populacao[chr].begin() + cortes.inf, populacao[chr].begin() + cortes.inf + tamanho, populacao[chr].begin() + cortes.sup);
         }

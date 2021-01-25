@@ -42,7 +42,9 @@ public:
 	*/
 
 	int categoria(string fardo);
-	limites gerarCorte(int rangeCol, int chr, string operador);
+	bool checarLimites(int corte, int chr);
+	bool checarBloco(int corte, int chr);
+	limites gerarCorte(int range, int chr, string operador);
 	vector<string> popularFardos(vector<string> filho, vector<string> mapa, int corte);
 
 	/*

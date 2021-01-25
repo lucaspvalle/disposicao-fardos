@@ -132,7 +132,6 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     //vector<int> nivel_fardos = { 1, 2 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
     vector<int> nivel_fardos = { 1 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
 
-
     int f = nivel_fardos[rand() % nivel_fardos.size()]; //numero aleatorio de 0-1 para definir o nivel de fardos
     int proc = nivel_proc[rand() % nivel_proc.size()]; //numero aleatorio de 0-2 para definir o nivel de procedencias
     double prop = (double)proporcao[rand() % proporcao.size()] / 100; //numero aleatorio de 0-2 para definir a proporcao, em %
@@ -186,9 +185,13 @@ void testes::parametros() {
     vector<int> geracaoTam = { 10, 100, 200 }; //parametros de tamanho da geracao a serem testados
     vector<double> mutacaoProb = { 0.005, 0.01, 0.05, 0.1 }; //parametros de probabilidade de mutacao a serem testados
 
-    for (int i = 0; i < populacaoTam.size(); i++)
-        for (int j = 0; j < geracaoTam.size(); j++)
-            for (int k = 0; k < mutacaoProb.size(); k++)
-                for (int l = 0; l < 2; l++)
+    unsigned int semente = 0;
+    for (unsigned int i = 0; i < populacaoTam.size(); i++)
+        for (unsigned int j = 0; j < geracaoTam.size(); j++)
+            for (unsigned int k = 0; k < mutacaoProb.size(); k++)
+                for (unsigned int l = 0; l < 2; l++) {
+                    semente++;
+                    srand(static_cast<unsigned int>(time(NULL)) * semente);
                     principal(populacaoTam[i], geracaoTam[j], mutacaoProb[k]); //executando o algoritmo com os parametros testes
+                }
 }

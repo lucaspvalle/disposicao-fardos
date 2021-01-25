@@ -75,7 +75,7 @@ void mapa(ga algoritmo) {
 //    Parâmetros do algoritmo
 //    */
 //
-//    int populacaoTam = 20, geracaoTam = 10;
+//    int populacaoTam = 20, geracaoTam = 20;
 //    double mutacaoProb = 0.05;
 //
 //    /*
