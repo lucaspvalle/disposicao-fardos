@@ -1,15 +1,15 @@
 #include "testes.h"
 
-double triangular(double minn, double maxx, double moda) {
+int triangular(double minn, double maxx, double moda) {
     //geracao de numeros aleatorios com distribuicao triangular
 
     double U = ((double)rand()) / RAND_MAX;
     double F = (moda - minn) / (maxx - minn);
 
     if (U <= F)
-        return moda + sqrt(U * (maxx - minn) * (moda - minn));
+        return static_cast<int>(floor(moda + sqrt(U * (maxx - minn) * (moda - minn))));
     else
-        return maxx - sqrt((1 - U) * (maxx - minn) * (maxx - moda));
+        return static_cast<int>(floor(maxx - sqrt((1 - U) * (maxx - minn) * (maxx - moda))));
 }
 
 vector<int> histograma(vector<double> cores, int classes) {
@@ -23,7 +23,7 @@ vector<int> histograma(vector<double> cores, int classes) {
 
     largura = ((max - min) / (double)classes); //range de cada intervalo
 
-    for (int cor = 0; cor < cores.size(); cor++) { //iterando cada cor para definir sua classe pertencente
+    for (unsigned int cor = 0; cor < cores.size(); cor++) { //iterando cada cor para definir sua classe pertencente
         for (int i = 0; i < classes; i++) { //iterando as classes para cada cor, até encontrar a pertencente
 
             intervalo = min + i * largura;
@@ -51,10 +51,10 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
 
     switch (nivel_fardos) { //parametrizando o nivel de fardos a serem alocados
     case 1: //nivel normal
-        num_fardos = floor(triangular(30, 160, 130));
+        num_fardos = triangular(30, 160, 130);
         break;
     case 2: //nivel ampliado
-        num_fardos = floor(triangular(300, 1600, 1300));
+        num_fardos = triangular(300, 1600, 1300);
         break;
     }
     
@@ -78,7 +78,7 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
         normal_distribution<double> normalDistCor(9.44, 0.938); //distribuicao normal para geracao de atributo cor
 
         do { //loop ate que o numero aleatorio gerado para estoque satisfaca as condicoes
-            qtd = floor(normalDistEst(generator));
+            qtd = static_cast<int>(floor(normalDistEst(generator)));
         } while (qtd < 1 || qtd > 165);
         estoques.push_back(qtd); //armazenando a quantidade de estoque
         total += qtd; //armazenando o total de fardos em estoque
@@ -96,7 +96,8 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
     for (int i = 0; i < classes; i++) {
         alocacao = participacao[i] * num_fardos; //quantidade de fardos a serem alocados por classes
 
-        p = floor(alocacao * proporcao), g = floor(alocacao - p); //quantidade de fardos pequenos, de acordo com a proporcao (em %), e de grandes
+        //quantidade de fardos pequenos, de acordo com a proporcao (em %), e de grandes
+        p = static_cast<int>(floor(alocacao * proporcao)), g = static_cast<int>(floor(alocacao - p));
         pequenos += p, grandes += g; //total de fardos pequenos e grandes
 
         instancias.push_back({ i, p, g }); //armazenando as quantidades por classe

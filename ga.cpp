@@ -18,7 +18,7 @@ int ga::categoria(string fardo) {
     fardo.pop_back(); //retirar o ultimo caracter da string (o "b" de "123b", por ex.)
     id = stoi(fardo); //converter a string "123" para int 123 (por ex.)
 
-    for (int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct de tipos de fardos
+    for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct de tipos de fardos
         cumsum += inputFardos[tipo].qtdade;
 
         if (id <= cumsum)
@@ -98,7 +98,7 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int 
     string variantes = { "abc" }; //identificador de posicoes do fardo na matriz
     vector<string> pequenos, grandes; //vetores de apoio para alocacao dos fardos
 
-    for (int idx = 0; idx < mapa.size(); idx++) { //classificando os fardos a serem alocados
+    for (unsigned int idx = 0; idx < mapa.size(); idx++) { //classificando os fardos a serem alocados
         if (inputFardos[categoria(mapa[idx])].tamanho == "grande") //se grandes,
             grandes.push_back(mapa[idx]);
         else //se pequenos,
@@ -169,7 +169,7 @@ void ga::init() {
     vector<string> fardos; //controle de fardos a serem misturados
     int grandes = 0, pequenos = 0; //quantidade de fardos classificados como grandes e pequenos
 
-    for (int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
+    for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
         if (inputFardos[i].tamanho == "pequeno") //se o fardo for classificado como pequeno,
             pequenos += inputFardos[i].qtdade;
         else //se o fardo for classificado como grande,
@@ -207,14 +207,14 @@ vector<int> ga::fitness() {
             col = i / 4; //armazenando a coluna da posicao iterada
             box = inputFardos[categoria(populacao[chr][i])].box;
 
-            for (int tipo = 0; tipo < inputFardos.size(); tipo++) //iterando a struct de tipos de fardos em busca do indice do box
+            for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) //iterando a struct de tipos de fardos em busca do indice do box
                 if (inputFardos[tipo].box == box) {
                     projecao[tipo][col] = 1; //1 caso haja um fardo <tipo> na coluna <col>, 0 caso contrario 
                     break;
                 }
         }
 
-        for (int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct para calcular a distancia projetada de cada tipo de fardo
+        for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct para calcular a distancia projetada de cada tipo de fardo
             base = -1; //inicializando a coluna base como -1 para ser sobrescrita pela primeira coluna com incidencia do fardo <tipo>
             for (int col = 0; col < colunas; col++) { //iterando todas as colunas da matriz
 
@@ -222,7 +222,7 @@ vector<int> ga::fitness() {
                     if (base == -1) //se for a primeira coluna do vetor com incidencia,
                         base = col;
 
-                    valores[chr] += (int)pow(col - base, 2);
+                    valores[chr] += static_cast<int>(pow(col - base, 2));
                     base = col; //atualizando a coluna base para comparacao
                 }
             }
@@ -252,7 +252,7 @@ void ga::cruzamento() {
     int melhor, pai, mae;
 
     //elitismo :: continuar com o melhor individuo na proxima geracao
-    melhor = max_element(fitval.begin(), fitval.end()) - fitval.begin();
+    melhor = static_cast<int>(max_element(fitval.begin(), fitval.end()) - fitval.begin());
     linhagem.push_back(populacao[melhor]);
 
     for (int chr = 1; chr < populacaoTam; chr++) { //iterando ate que a linhagem tenha o tamanho da populacao

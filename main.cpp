@@ -41,12 +41,13 @@ void mapa(ga algoritmo) {
     ofstream arq;
     int melhor, tipo;
 
-    melhor = max_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin(); //indice do individuo com maior valor fitness
+    //indice do individuo com maior valor fitness
+    melhor = static_cast<int>(max_element(algoritmo.fitval.begin(), algoritmo.fitval.end()) - algoritmo.fitval.begin());
     
     arq.open("temp.csv", ios::trunc);
     if (arq.is_open()) {
 
-        for (int i = 0; i < algoritmo.populacao[melhor].size(); i++) { //iterando todos os espacos da matriz do melhor individuo
+        for (unsigned int i = 0; i < algoritmo.populacao[melhor].size(); i++) { //iterando todos os espacos da matriz do melhor individuo
             if (!algoritmo.populacao[melhor][i].empty()) { //caso o espaco esteja preenchido,
 
                 tipo = algoritmo.categoria(algoritmo.populacao[melhor][i]); //obter a categoria do fardo
@@ -67,75 +68,36 @@ void mapa(ga algoritmo) {
     arq.close();
 }
 
+void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos) {
+
+    vector<int> fitval;
+    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
+
+    algoritmo.init(); //inicializando a populacao para evolucao
+    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
+
+    for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
+        fitval = algoritmo.fitness();
+        algoritmo.cruzamento();
+        algoritmo.mutacao();
+    }
+
+    //mapa(algoritmo);
+    //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
+}
+
 //int main() {
 //
 //    //FreeConsole();  //fechar o prompt de comando durante a execucao
 //
-//    /*
-//    Parâmetros do algoritmo
-//    */
-//
-//    int populacaoTam = 20, geracaoTam = 20;
-//    double mutacaoProb = 0.05;
-//
-//    /*
-//    Inicialização de variáveis
-//    */
-//
 //    vector<planilha> inputFardos;
-//    vector<int> fitval;
-//
-//    chrono::time_point<chrono::system_clock> comeco, fim; //cronometros
-//
+//    double mutacaoProb = 0.05;
+//    int populacaoTam = 10, geracaoTam = 10;
 //    float criterio_peso = 220; //classificacao de tamanhos de fardos
 //    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
-//    
-//    /*
-//    Inicialização do algoritmo
-//    */
 //
 //    inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
-//
-//    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
-//    algoritmo.init(); //inicializando a populacao para evolucao
-//    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
-//
-//    /*
-//    Evolução
-//    */
-//
-//    cout << "=== Valores Fitness ===" << endl;
-//    cout << "Inicial: " << *max_element(fitval.begin(), fitval.end()) << endl;
-//
-//    comeco = chrono::system_clock::now(); //iniciando cronometro
-//
-//    for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
-//
-//        fitval = algoritmo.fitness();
-//        algoritmo.cruzamento();
-//        algoritmo.mutacao();
-//    }
-//
-//    fim = chrono::system_clock::now(); //parando cronometro
-//
-//    fitval = algoritmo.fitness();
-//    cout << "Final: " << *max_element(fitval.begin(), fitval.end()) << endl;
-//
-//    /*
-//    Cronômetro
-//    */
-//
-//    chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
-//
-//    cout << endl << "=== Tempo do AG ===" << endl;
-//    cout << segundos.count() << " segundos" << endl;
-//
-//    /*
-//    Saída
-//    */
-//
-//    //mapa(algoritmo);
-//    //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
+//    sumario(populacaoTam, geracaoTam, mutacaoProb, inputFardos);
 //
 //    return 0;
 //}
