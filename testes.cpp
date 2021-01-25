@@ -1,8 +1,8 @@
 #include "testes.h"
 
-double testes::triangular(double a, double b, double c) {
+double triangular(double a, double b, double c) {
 
-    double U = rand() / (double)RAND_MAX;
+    double U = ((double)rand()) / RAND_MAX;
     double F = (c - a) / (b - a);
 
     if (U <= F)
@@ -36,21 +36,22 @@ vector<int> histograma(vector<double> cores, int classes) {
 
 vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, double proporcao, int classes) {
 
-    vector<planilha> inputFardos;
-    vector<double> estoques, cores;
     vector<int> bins;
+    vector<planilha> inputFardos;
+    vector<instancia> instancias;
+    vector<double> estoques, cores, participacao(classes, 0);
 
-    int num_fardos, num_proc, qtd = 0, total = 0, a, b, pequenos, grandes;
-    double cor = 0;
+    double cor = 0, total = 0, alocacao;
+    int num_fardos, num_proc, qtd = 0, a, b, pequenos = 0, grandes = 0, p, g, var;
 
     default_random_engine generator; //mecanismo de geracao de numeros aleatorios
 
     switch (nivel_fardos) { //parametrizando o nivel de fardos a serem alocados
     case 1: //nivel normal
-        num_fardos = floor(triangular(30, 130, 160));
+        num_fardos = floor(triangular(30, 160, 130));
         break;
     case 2: //nivel ampliado
-        num_fardos = floor(triangular(300, 1300, 1600));
+        num_fardos = floor(triangular(300, 1600, 1300));
         break;
     }
     
@@ -86,23 +87,31 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
     }
     bins = histograma(cores, classes); //dividindo as cores em classes
 
-    for (int i = 0; i < num_proc; i++) { //iterando cada procedencia novamente, depois de dividir as cores em classes
+    for (int i = 0; i < num_proc; i++)
+        participacao[bins[i]] += estoques[i] / total;
 
-        estoques[i] = floor((estoques[i] / total) * num_fardos); //atualizando o estoque para ser proporcional à qtdade que deve ser alocada na linha
+    for (int i = 0; i < classes; i++) {
+        alocacao = participacao[i] * num_fardos;
 
-        pequenos = floor(estoques[i] * proporcao); //obtendo a quantidade de fardos pequenos de acordo com a proporcao (25%, 50% ou 75%)
-        grandes = estoques[i] - pequenos; //o mesmo para os fardos grandes
+        p = floor(alocacao * proporcao), g = floor(alocacao - p);
+        pequenos += p, grandes += g;
 
-        while (pequenos % 3 != 0) //corrigindo a quantidade de fardos pequenos para o melhor aproveitamento da linha de abertura
-            pequenos++;
+        instancias.push_back({ i, p, g });
+    }
 
-        while (grandes % 2 != 0) //corrigindo a quantidade de fardos grandes para o melhor aproveitamento da linha de abertura
-            grandes++;
+    while (pequenos % 3 != 0 || (pequenos / 3) % 2 != 0) { //corrigindo a quantidade de fardos pequenos para o melhor aproveitamento da linha de abertura
+        var = rand() % instancias.size();
+        instancias[var].pequenos++, pequenos++;
+    }
 
-        if (pequenos != 0)
-            inputFardos.push_back({ bins[i], pequenos, 200, to_string(bins[i]), "pequeno" }); //input dos fardos pequenos para o algoritmo
-        if (grandes != 0)
-        inputFardos.push_back({ bins[i], grandes, 230, to_string(bins[i]), "grande" }); //input dos fardos grandes para o algoritmo
+    while (grandes % 2 != 0 || (grandes / 2) % 2 != 0) { //corrigindo a quantidade de fardos grandes para o melhor aproveitamento da linha de abertura
+        var = rand() % instancias.size();
+        instancias[var].grandes++, grandes++;
+    }
+
+    for (int i = 0; i < classes; i++) {
+        inputFardos.push_back({ i, instancias[i].pequenos, 200, to_string(i), "pequeno" });
+        inputFardos.push_back({ i, instancias[i].grandes, 230, to_string(i), "grande" });
     }
     return inputFardos;
 }
@@ -120,8 +129,10 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     Parametrização das instâncias
     */
 
-    vector<int> nivel_fardos = { 1, 2 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
-    
+    //vector<int> nivel_fardos = { 1, 2 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
+    vector<int> nivel_fardos = { 1 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
+
+
     int f = nivel_fardos[rand() % nivel_fardos.size()]; //numero aleatorio de 0-1 para definir o nivel de fardos
     int proc = nivel_proc[rand() % nivel_proc.size()]; //numero aleatorio de 0-2 para definir o nivel de procedencias
     double prop = (double)proporcao[rand() % proporcao.size()] / 100; //numero aleatorio de 0-2 para definir a proporcao, em %
@@ -152,7 +163,7 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     }
     fim = chrono::system_clock::now(); //parando cronometro
 
-    fitval = algoritmo.fitness(); 
+    fitval = algoritmo.fitness();
     int final = *max_element(fitval.begin(), fitval.end()); //valor fitness final do algoritmo
 
     /*
@@ -162,7 +173,7 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
     double tempo = segundos.count();
 
-    arq.open("resultados.csv", ios::out); //arquivo com os resultados dos testes
+    arq.open("resultados.csv", ios::app); //arquivo com os resultados dos testes
     if (arq.is_open()) { //se aberto, escrever os parametros
         arq << populacaoTam << ',' << geracaoTam << ',' << mutacaoProb << ',' << inicial << ',' << final << ',' << tempo << ',' << endl;
     }
@@ -170,9 +181,9 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
 }
 
 void testes::parametros() {
-    
-    vector<int> populacaoTam = { 10, 100, 500, 1000 }; //parametros de tamanho da populacao a serem testados
-    vector<int> geracaoTam = { 10, 100, 500, 1000 }; //parametros de tamanho da geracao a serem testados
+
+    vector<int> populacaoTam = { 10, 100, 200 }; //parametros de tamanho da populacao a serem testados
+    vector<int> geracaoTam = { 10, 100, 200 }; //parametros de tamanho da geracao a serem testados
     vector<double> mutacaoProb = { 0.005, 0.01, 0.05, 0.1 }; //parametros de probabilidade de mutacao a serem testados
 
     for (int i = 0; i < populacaoTam.size(); i++)

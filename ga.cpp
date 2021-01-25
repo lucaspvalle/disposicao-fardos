@@ -18,17 +18,17 @@ int ga::categoria(string fardo) {
         if (id <= cumsum)
             return tipo;
     }
-    return 99;
+    return NULL;
 }
 
-limites ga::gerarCorte(int rangeCol, int chr, string operador) {
+limites ga::gerarCorte(int range, int chr, string operador) {
     //gerador de cortes para os operadores
-
+    
     char letraInf, letraSup;
-    int corteInf = 0, corteSup = 0, bloco = 3, ajusteInf, ajusteSup;;
+    int corteInf = 0, corteSup = 0, bloco = 3, ajusteInf, ajusteSup, varInf, varSup, tipoInf, tipoSup;
 
     do { //gerando dois pontos de corte aleatorios
-        corteInf = rand() % rangeCol, corteSup = rand() % rangeCol;
+        corteInf = rand() % range, corteSup = rand() % range;
     } while (corteInf == corteSup);
 
     if (corteSup < corteInf) //caso a coluna superior seja menor do que a inferior, trocar os valores
@@ -44,17 +44,35 @@ limites ga::gerarCorte(int rangeCol, int chr, string operador) {
     }
     corteInf *= linhas, corteSup *= linhas;
 
-    //ajustando o corte para nao pegar um fardo ao meio
-    letraInf = populacao[chr][corteInf].back(), letraSup = populacao[chr][corteSup].back(); //obtendo a identificacao de posicao do fardo (a, b ou c)
-    ajusteInf = (int)letraInf - (int)'a', ajusteSup = (int)letraSup - (int)'a'; //calculando a distancia do fardo em relacao à posicao inicial (a)
-    corteInf -= ajusteInf * linhas, corteSup -= ajusteSup * linhas; //ajustando
+    for (int i = 0; i < linhas; i++) { //ajustando o corte para nao pegar um fardo ao meio
+        varInf = corteInf + i, varSup = corteSup + i;        
+        tipoInf = categoria(populacao[chr][varInf]), tipoSup = categoria(populacao[chr][varSup]);
 
+        if (inputFardos[tipoInf].tamanho == "grande") {
+            letraInf = populacao[chr][varInf].back();
+
+            if (letraInf != 'a') {
+                ajusteInf = (int)letraInf - (int)'a'; //calculando a distancia do fardo em relacao à posicao inicial (a)
+                corteInf -= ajusteInf * linhas;
+            }
+        }
+
+        if (inputFardos[tipoSup].tamanho == "grande") {
+            letraSup = populacao[chr][varSup].back();
+
+            if (letraSup != 'a') {
+                ajusteSup = (int)letraSup - (int)'a'; //calculando a distancia do fardo em relacao à posicao inicial (a)
+                corteSup -= ajusteSup * linhas;
+            }
+        }
+    }
     return { corteInf, corteSup };
 }
 
 vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int corte) {
     //suporte de preenchimento de fardos para operador OX
     
+    int var, varUm, varDois, varIterUm, varIterDois, i, j;
     string variantes = { "abc" }; //identificador de posicoes do fardo na matriz
     vector<string> pequenos, grandes; //vetores de apoio para alocacao dos fardos
 
@@ -65,56 +83,60 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int 
             pequenos.push_back(mapa[idx]);
     }
 
-    int i = corte / linhas, j = 0, idx = 0; //iniciando o preenchimento a partir do corte superior na linha 0
+    i = corte / linhas, j = 0; //iniciando o preenchimento a partir do corte superior na linha 0
     while (grandes.size() != 0) { //enquanto houver fardos grandes a serem alocados,
 
-        int var = j + (i * linhas); //ponto de insercao
-        int varUm = var + linhas, varDois = var + (2 * linhas); //ponto de insercao dos outros espacos do fardo
+        var = j + (i * linhas), varUm = var + linhas, varDois = var + (2 * linhas); //pontos de insercao
 
         if (varUm >= matrizTam || varDois >= matrizTam) { //se a matriz estiver no final, voltar para o comeco
-            i = 0; //j = 2;
+            i = 0, j = 0;
             continue;
         }
 
         if (filho[var].empty() && filho[varUm].empty() && filho[varDois].empty()) { //se os espacos estiverem vazios (disponiveis),
+
+            grandes[0].pop_back(), grandes[1].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
             
-            grandes[idx].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
-
             for (int d = 0; d < 3; d++) { //iterar a quantidade de posicoes necessarias para o fardo
-                int varIter = var + d * linhas;
-                filho[varIter] = grandes[idx] + variantes[d];
+                varIterUm = var + d * linhas, varIterDois = varIterUm + 1;
+                filho[varIterUm] = grandes[0] + variantes[d];
+                filho[varIterDois] = grandes[1] + variantes[d];
             }
-            grandes.erase(grandes.begin()); //apagar da lista o fardo ja alocado
+            grandes.erase(grandes.begin(), grandes.begin() + 2); //apagar da lista o fardo ja alocado
         }
-        j++; //proxima linha
+        i += 3;
 
-        if (j == 2 && grandes.size() != 0)
-            j = 0, i = i + 3; //se o par de fardos grandes ja estiverem alocados, ir para a proxima coluna disponivel
+        if (i >= colunas)
+            j += 2, i = 0;
+        if (j == linhas)
+            j = 0;
     }
 
     while (pequenos.size() != 0) { //enquanto houver fardos pequenos a serem alocados,
 
-        int var = j + i * linhas; //ponto de insercao
-        int varUm = var + 1; //ponto de insercao dos outros espacos do fardo
+        var = j + i * linhas, varUm = var + 1; //pontos de insercao
 
-        if (varUm == matrizTam) { i = 0; continue; } //se a matriz estiver no final, voltar para o comeco
+        if (varUm >= matrizTam) { //se a matriz estiver no final, voltar para o comeco
+            i = 0, j = 0;
+            continue;
+        }
 
         if (filho[var].empty() && filho[varUm].empty()) { //se os espacos estiverem vazios (disponiveis),
 
-            pequenos[idx].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
+            pequenos[0].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
 
             for (int d = 0; d < 2; d++) { //iterar a quantidade de posicoes necessarias para o fardo
-                int varIter = var + d;
-                filho[varIter] = pequenos[idx] + variantes[d];
+                varIterUm = var + d;
+                filho[varIterUm] = pequenos[0] + variantes[d];
             }
             pequenos.erase(pequenos.begin()); //apagar da lista o fardo ja alocado
         }
-        j = j + 2; //proxima posicao disponivel
+        j += 2; //proxima posicao disponivel
 
         if (j == linhas)
-            j = 0, i++; //se estiver no fim da largura da matriz, voltar para o comeco
+            j = 0, i++; //se estiver no fim da largura da matriz, ir para a proxima coluna
         if (i == colunas)
-            i = 0; //se estiver no fim do comprimento da matriz, voltar para o comeco
+            i = 0; //se estiver no fim da matriz, voltar para o comeco
     }
     return filho;
 }
@@ -184,7 +206,7 @@ vector<int> ga::fitness() {
                     if (base == -1) //se for a primeira coluna do vetor com incidencia,
                         base = col;
 
-                    valores[chr] += (col - base);
+                    valores[chr] += (int)pow(col - base, 1);
                     base = col; //atualizando a coluna base para comparacao
                 }
             }
