@@ -4,6 +4,12 @@
 Funções de apoio
 */
 
+void ga::seed(unsigned int s) {
+    //definindo sementes diferentes para a execucao do algoritmo em testes
+
+    srand(static_cast<unsigned int>(time(NULL)) * s);
+}
+
 int ga::categoria(string fardo) {
     //classificacao dos fardos de acordo com a procedencia por meio da soma acumulada
 
@@ -22,33 +28,36 @@ int ga::categoria(string fardo) {
 }
 
 bool ga::checarLimites(int corte, int chr) {
+    //checar se o limite do corte nao está pegando um fardo ao meio
 
     char letra;
     int var, tipo;
 
-    for (int i = 0; i < linhas; i++) {
-        var = corte + i;
-        letra = populacao[chr][var].back(), tipo = categoria(populacao[chr][var]);
+    for (int i = 0; i < linhas; i++) { //checar em todas as linhas da coluna cortada
+        var = corte + i; //variavel armazenando a linha iterada
+        letra = populacao[chr][var].back(), tipo = categoria(populacao[chr][var]); //letra de identificacao (o "b" de "123b") e o tipo do fardo (classe)
 
-        if (inputFardos[tipo].tamanho == "grande" && letra != 'a')
-            return true;
+        if (inputFardos[tipo].tamanho == "grande" && letra != 'a') //se o fardo for grande e nao estiver em sua posicao inicial ("a"), está sendo cortado
+            return true; //portanto, retornar verdadeiro e continuar o loop
     }
-    return false;
+    return false; //se nenhum fardo estiver sendo cortado ao meio, parar o loop
 }
 
 bool ga::checarBloco(int corte, int chr) {
+    //checar se o limite do corte nao está pegando um fardo ao meio
 
     int var, tipo, bloco = 3;
 
-    for (int d = 0; d < bloco; d++) { //verificando se o intervalo está cortando ao meio algum fardo grande
-        for (int i = 0; i < linhas; i++) {
+    for (int d = 0; d < bloco; d++) { //iterando todas as colunas dentro de um bloco
+        for (int i = 0; i < linhas; i++) { //iterando todas as linhas da coluna em questao
             var = corte + d * linhas + i, tipo = categoria(populacao[chr][var]);
 
+            //como um fardo grande tem o mesmo tamanho do bloco, um fardo pequeno na mesma coluna mostra que o fardo grande está sendo cortado
             if (inputFardos[categoria(populacao[chr][corte])].tamanho == "pequeno" && inputFardos[tipo].tamanho == "grande")
-                return true;
+                return true; //portanto, retornar verdadeiro e continuar o loop
         }
     }
-    return false;
+    return false; //se nenhum fardo estiver sendo cortado ao meio, parar o loop
 }
 
 limites ga::gerarCorte(int range, int chr, string operador) {
@@ -73,10 +82,10 @@ limites ga::gerarCorte(int range, int chr, string operador) {
     }
     corteInf *= linhas, corteSup *= linhas;
 
-    while (checarLimites(corteInf, chr))
+    while (checarLimites(corteInf, chr)) //enquanto algum fardo estiver sendo cortado, continuar
         corteInf -= linhas;
     
-    while (checarLimites(corteSup, chr))
+    while (checarLimites(corteSup, chr)) //enquanto algum fardo estiver sendo cortado, continuar
         corteSup -= linhas;
 
     return { corteInf, corteSup };
@@ -100,14 +109,12 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int 
     while (grandes.size() != 0) { //enquanto houver fardos grandes a serem alocados,
 
         var = j + (i * linhas), varUm = var + linhas, varDois = var + (2 * linhas); //pontos de insercao
-
         if (varUm >= matrizTam || varDois >= matrizTam) { //se a matriz estiver no final, voltar para o comeco
             i = 0, j = 0;
             continue;
         }
 
         if (filho[var].empty() && filho[varUm].empty() && filho[varDois].empty()) { //se os espacos estiverem vazios (disponiveis),
-
             grandes[0].pop_back(), grandes[1].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
             
             for (int d = 0; d < 3; d++) { //iterar a quantidade de posicoes necessarias para o fardo
@@ -128,14 +135,12 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> mapa, int 
     while (pequenos.size() != 0) { //enquanto houver fardos pequenos a serem alocados,
 
         var = j + i * linhas, varUm = var + 1; //pontos de insercao
-
         if (varUm >= matrizTam) { //se a matriz estiver no final, voltar para o comeco
             i = 0, j = 0;
             continue;
         }
 
         if (filho[var].empty() && filho[varUm].empty()) { //se os espacos estiverem vazios (disponiveis),
-
             pequenos[0].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
 
             for (int d = 0; d < 2; d++) { //iterar a quantidade de posicoes necessarias para o fardo
@@ -198,7 +203,7 @@ vector<int> ga::fitness() {
         vector<vector<int>> projecao(inputFardos.size(), vector<int>(colunas, 0));
 
         for (int i = 0; i < matrizTam; i++) {
-            
+
             col = i / 4; //armazenando a coluna da posicao iterada
             box = inputFardos[categoria(populacao[chr][i])].box;
 

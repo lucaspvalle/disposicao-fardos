@@ -1,17 +1,19 @@
 #include "testes.h"
 
-double triangular(double a, double b, double c) {
+double triangular(double minn, double maxx, double moda) {
+    //geracao de numeros aleatorios com distribuicao triangular
 
     double U = ((double)rand()) / RAND_MAX;
-    double F = (c - a) / (b - a);
+    double F = (moda - minn) / (maxx - minn);
 
     if (U <= F)
-        return a + sqrt(U * (b - a) * (c - a));
+        return moda + sqrt(U * (maxx - minn) * (moda - minn));
     else
-        return b - sqrt((1 - U) * (b - a) * (b - c));
+        return maxx - sqrt((1 - U) * (maxx - minn) * (maxx - moda));
 }
 
 vector<int> histograma(vector<double> cores, int classes) {
+    //histograma para classificar os fardos em intervalos de acordo com a cor
     
     double max, min, largura, intervalo;
     vector<int> bins; //vetor com as cores divididas em classes
@@ -35,6 +37,7 @@ vector<int> histograma(vector<double> cores, int classes) {
 }
 
 vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, double proporcao, int classes) {
+    //geracao aleatoria de instancias para simular o conjunto de dados
 
     vector<int> bins;
     vector<planilha> inputFardos;
@@ -87,36 +90,36 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
     }
     bins = histograma(cores, classes); //dividindo as cores em classes
 
-    for (int i = 0; i < num_proc; i++)
+    for (int i = 0; i < num_proc; i++) //proporcao (em %) dos fardos de acordo com a quantidade a ser alocada, agrupados por classes
         participacao[bins[i]] += estoques[i] / total;
 
     for (int i = 0; i < classes; i++) {
-        alocacao = participacao[i] * num_fardos;
+        alocacao = participacao[i] * num_fardos; //quantidade de fardos a serem alocados por classes
 
-        p = floor(alocacao * proporcao), g = floor(alocacao - p);
-        pequenos += p, grandes += g;
+        p = floor(alocacao * proporcao), g = floor(alocacao - p); //quantidade de fardos pequenos, de acordo com a proporcao (em %), e de grandes
+        pequenos += p, grandes += g; //total de fardos pequenos e grandes
 
-        instancias.push_back({ i, p, g });
+        instancias.push_back({ i, p, g }); //armazenando as quantidades por classe
     }
 
     while (pequenos % 3 != 0 || (pequenos / 3) % 2 != 0) { //corrigindo a quantidade de fardos pequenos para o melhor aproveitamento da linha de abertura
-        var = rand() % instancias.size();
+        var = rand() % instancias.size(); //gerando um indice aleatorio para corrigir a quantidade
         instancias[var].pequenos++, pequenos++;
     }
 
     while (grandes % 2 != 0 || (grandes / 2) % 2 != 0) { //corrigindo a quantidade de fardos grandes para o melhor aproveitamento da linha de abertura
-        var = rand() % instancias.size();
+        var = rand() % instancias.size(); //gerando um indice aleatorio para corrigir a quantidade
         instancias[var].grandes++, grandes++;
     }
 
-    for (int i = 0; i < classes; i++) {
+    for (int i = 0; i < classes; i++) { //transformando a instancia na estrutura utilizada pelo algoritmo
         inputFardos.push_back({ i, instancias[i].pequenos, 200, to_string(i), "pequeno" });
         inputFardos.push_back({ i, instancias[i].grandes, 230, to_string(i), "grande" });
     }
     return inputFardos;
 }
 
-void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
+void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb, unsigned int semente) {
 
     ofstream arq;
     vector<planilha> inputFardos;
@@ -144,6 +147,7 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
     */
 
     ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
+    algoritmo.seed(semente);
 
     algoritmo.init(); //inicializando a populacao para evolucao
     fitval = algoritmo.fitness(); //avaliando a populacao inicializada
@@ -181,17 +185,22 @@ void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb) {
 
 void testes::parametros() {
 
-    vector<int> populacaoTam = { 10, 100, 200 }; //parametros de tamanho da populacao a serem testados
-    vector<int> geracaoTam = { 10, 100, 200 }; //parametros de tamanho da geracao a serem testados
-    vector<double> mutacaoProb = { 0.005, 0.01, 0.05, 0.1 }; //parametros de probabilidade de mutacao a serem testados
+    /*
+    Parâmetros testados
+    */
 
+    vector<double> mutacaoProb = { 0.005, 0.01, 0.05, 0.1 };
+    vector<int> populacaoTam = { 10, 100, 200 }, geracaoTam = { 10, 100, 200 };
+    
     unsigned int semente = 0;
+
+    //executando o algoritmo para todas as combinacoes de parametros
     for (unsigned int i = 0; i < populacaoTam.size(); i++)
         for (unsigned int j = 0; j < geracaoTam.size(); j++)
             for (unsigned int k = 0; k < mutacaoProb.size(); k++)
                 for (unsigned int l = 0; l < 2; l++) {
                     semente++;
                     srand(static_cast<unsigned int>(time(NULL)) * semente);
-                    principal(populacaoTam[i], geracaoTam[j], mutacaoProb[k]); //executando o algoritmo com os parametros testes
+                    principal(populacaoTam[i], geracaoTam[j], mutacaoProb[k], semente); //executando o algoritmo com os parametros testes
                 }
 }

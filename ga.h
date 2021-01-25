@@ -41,6 +41,7 @@ public:
 	Funções de apoio
 	*/
 
+	void seed(unsigned int s);
 	int categoria(string fardo);
 	bool checarLimites(int corte, int chr);
 	bool checarBloco(int corte, int chr);
