@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm> //std::shuffle, std::max_element
 #include <random> //std::default_random_engine, std::rand
-#include <iostream>
+#include <iostream> //std::time
 #include <string>
 #include <vector>
 using namespace std;
@@ -28,7 +28,7 @@ public:
 	int matrizTam, colunas;
 
 	string2d populacao; //populacao de cromossomos
-	vector<int> fitval; //valores fitness da populacao
+	vector<double> fitval; //valores fitness da populacao
 	vector<planilha> inputFardos; //dados de inputs dos fardos
 
 	ga(int pop, double probabilidade, vector<planilha> input) {
@@ -53,7 +53,7 @@ public:
 	*/
 
 	void init();
-	vector<int> fitness();
+	vector<double> fitness();
 	int selecao();
 	void cruzamento();
 	void mutacao();

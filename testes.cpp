@@ -36,13 +36,13 @@ vector<int> histograma(vector<double> cores, int classes) {
     return bins;
 }
 
-vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, double proporcao, int classes) {
+vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, double porcentagem, int classes) {
     //geracao aleatoria de instancias para simular o conjunto de dados
 
     vector<int> bins;
     vector<planilha> inputFardos;
     vector<instancia> instancias;
-    vector<double> estoques, cores, participacao(classes, 0);
+    vector<double> estoques, cores, proporcao(classes, 0);
 
     double cor = 0, total = 0, alocacao;
     int num_fardos, num_proc, qtd = 0, a, b, pequenos = 0, grandes = 0, p, g, var;
@@ -91,13 +91,13 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
     bins = histograma(cores, classes); //dividindo as cores em classes
 
     for (int i = 0; i < num_proc; i++) //proporcao (em %) dos fardos de acordo com a quantidade a ser alocada, agrupados por classes
-        participacao[bins[i]] += estoques[i] / total;
+        proporcao[bins[i]] += estoques[i] / total;
 
     for (int i = 0; i < classes; i++) {
-        alocacao = participacao[i] * num_fardos; //quantidade de fardos a serem alocados por classes
+        alocacao = proporcao[i] * num_fardos; //quantidade de fardos a serem alocados por classes
 
-        //quantidade de fardos pequenos, de acordo com a proporcao (em %), e de grandes
-        p = static_cast<int>(floor(alocacao * proporcao)), g = static_cast<int>(floor(alocacao - p));
+        //quantidade de fardos pequenos, de acordo com a porcentagem (em %), e de grandes
+        p = static_cast<int>(floor(alocacao * porcentagem)), g = static_cast<int>(floor(alocacao - p));
         pequenos += p, grandes += g; //total de fardos pequenos e grandes
 
         instancias.push_back({ i, p, g }); //armazenando as quantidades por classe
@@ -120,88 +120,17 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
     return inputFardos;
 }
 
-void testes::principal(int populacaoTam, int geracaoTam, double mutacaoProb, unsigned int semente) {
+vector<grupos> testes::combinador() {
 
-    ofstream arq;
-    vector<planilha> inputFardos;
-    vector<int> fitval;
+    vector<grupos> parametros;
+    vector<double> porcentagem = { 0.25, 0.50, 0.75 };
+    vector<int> fardos = { 1 }, proc = { 1, 2, 3 }, classes = { 5, 10, 15 };
 
-    chrono::time_point<chrono::system_clock> comeco, fim; //cronometros
-    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
+    for (int i = 0; i < fardos.size(); i++)
+        for (int j = 0; j < proc.size(); j++)
+            for (int k = 0; k < porcentagem.size(); k++)
+                for (int l = 0; l < classes.size(); l++)
+                    parametros.push_back({ fardos[i], proc[j], classes[l], porcentagem[k] });
 
-    /*
-    Parametrização das instâncias
-    */
-
-    //vector<int> nivel_fardos = { 1, 2 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
-    vector<int> nivel_fardos = { 1 }, nivel_proc = { 1, 2, 3 }, proporcao = { 25, 50, 75 }, classes = { 2, 5, 10 };
-
-    int f = nivel_fardos[rand() % nivel_fardos.size()]; //numero aleatorio de 0-1 para definir o nivel de fardos
-    int proc = nivel_proc[rand() % nivel_proc.size()]; //numero aleatorio de 0-2 para definir o nivel de procedencias
-    double prop = (double)proporcao[rand() % proporcao.size()] / 100; //numero aleatorio de 0-2 para definir a proporcao, em %
-    int k = classes[rand() % classes.size()]; //numero aleatorio de 0-2 para definir as classes do histograma
-
-    inputFardos = gerarInstancias(f, proc, prop, k); //simulando uma instancia de entrada para o algoritmo
-
-    /*
-    Inicialização do algoritmo
-    */
-
-    ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
-    algoritmo.seed(semente);
-
-    algoritmo.init(); //inicializando a populacao para evolucao
-    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
-    int inicial = *max_element(fitval.begin(), fitval.end()); //valor fitness inicial da heuristica construtiva
-
-    /*
-    Evolução
-    */
-
-    comeco = chrono::system_clock::now(); //iniciando cronometro
-    for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
-
-        fitval = algoritmo.fitness();
-        algoritmo.cruzamento();
-        algoritmo.mutacao();
-    }
-    fim = chrono::system_clock::now(); //parando cronometro
-
-    fitval = algoritmo.fitness();
-    int final = *max_element(fitval.begin(), fitval.end()); //valor fitness final do algoritmo
-
-    /*
-    Cronômetro
-    */
-
-    chrono::duration<double> segundos = fim - comeco; //calculando tempo de execucao
-    double tempo = segundos.count();
-
-    arq.open("resultados.csv", ios::app); //arquivo com os resultados dos testes
-    if (arq.is_open()) { //se aberto, escrever os parametros
-        arq << populacaoTam << ',' << geracaoTam << ',' << mutacaoProb << ',' << inicial << ',' << final << ',' << tempo << ',' << endl;
-    }
-    arq.close();
-}
-
-void testes::parametros() {
-
-    /*
-    Parâmetros testados
-    */
-
-    vector<double> mutacaoProb = { 0.005, 0.01, 0.05, 0.1 };
-    vector<int> populacaoTam = { 10, 100, 200 }, geracaoTam = { 10, 100, 200 };
-    
-    unsigned int semente = 0;
-
-    //executando o algoritmo para todas as combinacoes de parametros
-    for (unsigned int i = 0; i < populacaoTam.size(); i++)
-        for (unsigned int j = 0; j < geracaoTam.size(); j++)
-            for (unsigned int k = 0; k < mutacaoProb.size(); k++)
-                for (unsigned int l = 0; l < 2; l++) {
-                    semente++;
-                    srand(static_cast<unsigned int>(time(NULL)) * semente);
-                    principal(populacaoTam[i], geracaoTam[j], mutacaoProb[k], semente); //executando o algoritmo com os parametros testes
-                }
+    return parametros;
 }

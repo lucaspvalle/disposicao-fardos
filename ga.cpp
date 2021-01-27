@@ -6,7 +6,6 @@ Funções de apoio
 
 void ga::seed(unsigned int s) {
     //definindo sementes diferentes para a execucao do algoritmo em testes
-
     srand(static_cast<unsigned int>(time(NULL)) * s);
 }
 
@@ -191,16 +190,17 @@ void ga::init() {
     ga::populacao = populacao;
 }
 
-vector<int> ga::fitness() {
+vector<double> ga::fitness() {
     //valor fitness dos cromossomos
 
-    int col, base, box;
-    vector<int> valores(populacaoTam, 0); //inicializando o valor fitness de cada cromossomo igual a 0
+    int col, box;
+    double base, distancia;
+    vector<double> valores(populacaoTam, 0.0); //inicializando o valor fitness de cada cromossomo igual a 0
     
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         
         //vetor de incidencia dos tipos de fardos (sim/nao (1/0)) nas colunas da matriz
-        vector<vector<int>> projecao(inputFardos.size(), vector<int>(colunas, 0));
+        vector<vector<double>> projecao(inputFardos.size(), vector<double>(colunas, 0.0));
 
         for (int i = 0; i < matrizTam; i++) {
 
@@ -209,21 +209,23 @@ vector<int> ga::fitness() {
 
             for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) //iterando a struct de tipos de fardos em busca do indice do box
                 if (inputFardos[tipo].box == box) {
-                    projecao[tipo][col] = 1; //1 caso haja um fardo <tipo> na coluna <col>, 0 caso contrario 
+                    projecao[tipo][col] = 1.0; //1 caso haja um fardo <tipo> na coluna <col>, 0 caso contrario 
                     break;
                 }
         }
 
         for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct para calcular a distancia projetada de cada tipo de fardo
-            base = -1; //inicializando a coluna base como -1 para ser sobrescrita pela primeira coluna com incidencia do fardo <tipo>
+            base = -1.0; //inicializando a coluna base como -1 para ser sobrescrita pela primeira coluna com incidencia do fardo <tipo>
             for (int col = 0; col < colunas; col++) { //iterando todas as colunas da matriz
 
-                if (projecao[tipo][col] == 1) { //somar a distancia entre as incidencias de fardos de mesmo tipo
-                    if (base == -1) //se for a primeira coluna do vetor com incidencia,
-                        base = col;
+                if (projecao[tipo][col] == 1.0) { //somar a distancia entre as incidencias de fardos de mesmo tipo
+                    if (base == -1.0) //se for a primeira coluna do vetor com incidencia,
+                        base = static_cast<double>(col);
 
-                    valores[chr] += static_cast<int>(pow(col - base, 2));
-                    base = col; //atualizando a coluna base para comparacao
+                    distancia = static_cast<double>(col) - base;
+                    if (distancia != 0) //divisao por zero resulta em infinito negativo
+                        valores[chr] += 10.0 - (1.0 / distancia);
+                    base = static_cast<double>(col); //atualizando a coluna base para comparacao
                 }
             }
         }

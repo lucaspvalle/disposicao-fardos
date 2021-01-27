@@ -1,7 +1,10 @@
 #include <Windows.h> //MessageBoxA
+#include <fstream>
+#include <chrono>
 #include "ga.h"
 #include "testes.h"
 using namespace std;
+using namespace chrono;
 
 vector<planilha> ler_planilha(float criterio_peso) {
     //leitura de arquivo CSV com inputs de fardos
@@ -68,13 +71,35 @@ void mapa(ga algoritmo) {
     arq.close();
 }
 
-void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos) {
+void resultado_teste(int pop, int grc, double mut, double fit_in, double fit_out, double tempo) {
 
-    vector<int> fitval;
+    ofstream arq;
+
+    arq.open("resultados.csv", ios::app); //arquivo com os resultados dos testes
+
+    if (arq.is_open()) { //se aberto, escrever os parametros
+        arq << pop << ',' << grc << ',' << mut << ',' << fit_in << ',' << fit_out << ',' << tempo << ',' << endl;
+    }
+    arq.close();
+}
+
+void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente) {
+
+    vector<double> fitval;
+    double fit_in, fit_out;
+    time_point<system_clock> comeco, fim; //cronometros
+
+    comeco = system_clock::now(); //iniciando cronometro
+
     ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
+    algoritmo.seed(semente);
+    //algoritmo.seed(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
+
 
     algoritmo.init(); //inicializando a populacao para evolucao
     fitval = algoritmo.fitness(); //avaliando a populacao inicializada
+
+    fit_in = *max_element(fitval.begin(), fitval.end()); //valor fitness inicial do algoritmo
 
     for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
         fitval = algoritmo.fitness();
@@ -82,30 +107,55 @@ void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planil
         algoritmo.mutacao();
     }
 
+    fit_out = *max_element(fitval.begin(), fitval.end()); //valor fitness final do algoritmo
+
+    fim = system_clock::now(); //parando cronometro
+    duration<double> segundos = fim - comeco; //calculando tempo de execucao
+
     //mapa(algoritmo);
+    resultado_teste(populacaoTam, geracaoTam, mutacaoProb, fit_in, fit_out, segundos.count());
+
     //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 }
 
-//int main() {
-//
-//    //FreeConsole();  //fechar o prompt de comando durante a execucao
-//
-//    vector<planilha> inputFardos;
-//    double mutacaoProb = 0.05;
-//    int populacaoTam = 10, geracaoTam = 10;
-//    float criterio_peso = 220; //classificacao de tamanhos de fardos
-//    srand(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
-//
-//    inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
-//    sumario(populacaoTam, geracaoTam, mutacaoProb, inputFardos);
-//
-//    return 0;
-//}
+void testar() {
+
+    vector<grupos> parametros;
+    unsigned int semente = 0, n;
+    vector<planilha> inputFardos;
+    vector<double> mut = { 0.01, 0.05, 0.1 };
+    vector<int> pop = { 10, 150, 250 }, grc = { 10, 50, 100 };
+
+    testes Iniciador;
+    parametros = Iniciador.combinador();
+
+    for (unsigned int d = 0; d < 2; d++) {
+        n = rand() % parametros.size();
+
+        //simulando uma instancia de entrada para o algoritmo
+        inputFardos = Iniciador.gerarInstancias(parametros[n].fardos, parametros[n].procedencia, parametros[n].porcentagem, parametros[n].classes);
+
+        //executando o algoritmo para todas as combinacoes de parametros
+        for (unsigned int i = 0; i < pop.size(); i++)
+            for (unsigned int j = 0; j < grc.size(); j++)
+                for (unsigned int k = 0; k < mut.size(); k++)
+                        semente++, sumario(pop[i], grc[j], mut[k], inputFardos, semente); //executando o algoritmo com os parametros testes
+
+        parametros.erase(parametros.begin() + n);
+    }
+}
 
 int main() {
 
-    testes Teste;
-    Teste.parametros();
+    ////FreeConsole();  //fechar o prompt de comando durante a execucao
+
+    //vector<planilha> inputFardos;
+    //float criterio_peso = 220; //classificacao de tamanhos de fardos
+
+    //inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
+    //sumario(populacaoTam, geracaoTam, mutacaoProb, inputFardos);
+
+    testar();
 
     return 0;
 }
