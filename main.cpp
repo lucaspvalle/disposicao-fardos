@@ -95,7 +95,6 @@ void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planil
     algoritmo.seed(semente);
     //algoritmo.seed(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
 
-
     algoritmo.init(); //inicializando a populacao para evolucao
     fitval = algoritmo.fitness(); //avaliando a populacao inicializada
 
