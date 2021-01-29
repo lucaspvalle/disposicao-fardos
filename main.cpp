@@ -6,6 +6,8 @@
 using namespace std;
 using namespace chrono;
 
+vector<relatorio> saida;
+
 vector<planilha> ler_planilha(float criterio_peso) {
     //leitura de arquivo CSV com inputs de fardos
 
@@ -71,19 +73,20 @@ void mapa(ga algoritmo) {
     arq.close();
 }
 
-void resultado_teste(int pop, int grc, double mut, double fit_in, double fit_out, double tempo) {
+void resultado_teste() {
 
     ofstream arq;
-
-    arq.open("resultados.csv", ios::app); //arquivo com os resultados dos testes
+    arq.open("resultados.csv", ios::out); //arquivo com os resultados dos testes
 
     if (arq.is_open()) { //se aberto, escrever os parametros
-        arq << pop << ',' << grc << ',' << mut << ',' << fit_in << ',' << fit_out << ',' << tempo << ',' << endl;
+        for (int i = 0; i < saida.size(); i++) {
+            arq << saida[i].idx << saida[i].pop << ',' << saida[i].grc << ',' << saida[i].mut << ',' << saida[i].fit_in << ',' << saida[i].fit_out << ',' << saida[i].tempo << ',' << endl;
+        }
     }
     arq.close();
 }
 
-void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente) {
+void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente) {
 
     vector<double> fitval;
     double fit_in, fit_out;
@@ -112,7 +115,7 @@ void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planil
     duration<double> segundos = fim - comeco; //calculando tempo de execucao
 
     //mapa(algoritmo);
-    resultado_teste(populacaoTam, geracaoTam, mutacaoProb, fit_in, fit_out, segundos.count());
+    saida.push_back({ idx, populacaoTam, geracaoTam, mutacaoProb, fit_in, fit_out, segundos.count()});
 
     //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 }
@@ -138,7 +141,7 @@ void testar() {
         for (unsigned int i = 0; i < pop.size(); i++)
             for (unsigned int j = 0; j < grc.size(); j++)
                 for (unsigned int k = 0; k < mut.size(); k++)
-                        semente++, sumario(pop[i], grc[j], mut[k], inputFardos, semente); //executando o algoritmo com os parametros testes
+                        semente++, sumario(d, pop[i], grc[j], mut[k], inputFardos, semente); //executando o algoritmo com os parametros testes
 
         parametros.erase(parametros.begin() + n);
     }
@@ -147,7 +150,7 @@ void testar() {
 int main() {
 
     ////FreeConsole();  //fechar o prompt de comando durante a execucao
-
+    
     //vector<planilha> inputFardos;
     //float criterio_peso = 220; //classificacao de tamanhos de fardos
 
@@ -155,6 +158,7 @@ int main() {
     //sumario(populacaoTam, geracaoTam, mutacaoProb, inputFardos);
 
     testar();
+    resultado_teste();
 
     return 0;
 }

@@ -12,6 +12,11 @@ typedef struct {
 	double porcentagem;
 } grupos;
 
+typedef struct {
+	int idx, pop, grc;
+	double mut, fit_in, fit_out, tempo;
+} relatorio;
+
 class testes
 {
 public:
