@@ -191,49 +191,36 @@ void ga::init() {
 }
 
 vector<double> ga::fitness() {
-    //valor fitness dos cromossomos
+    //funcao fitness de avaliacao
 
-    int col, box;
-    double base, distancia;
-    vector<double> valores(populacaoTam, 0.0); //inicializando o valor fitness de cada cromossomo igual a 0
-    
-    for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
-        
-        //vetor de incidencia dos tipos de fardos (sim/nao (1/0)) nas colunas da matriz
-        vector<vector<double>> projecao(inputFardos.size(), vector<double>(colunas, 0.0));
+    int tipo, coluna, j;
+    vector<double> valores(populacaoTam, 0.0); //vetor com os valores fitness de cada individuo
+    vector<vector<double>> loc_fardos(inputFardos.size()); //vetor com a localizacao dos tipos de fardos ao longo das colunas
 
-        for (int i = 0; i < matrizTam; i++) {
+    //construcao do vetor com localizacao dos tipos de fardos
+    for (int chr = 0; chr < populacaoTam; chr++) { //para cada individuo,
+        for (int i = 0; i < matrizTam; i++) { //iterar todas as posicoes da matriz
 
-            col = i / 4; //armazenando a coluna da posicao iterada
-            box = inputFardos[categoria(populacao[chr][i])].box;
+            coluna = i / 4; //armazenando a coluna atual
+            tipo = categoria(populacao[chr][i]); //armazenando o tipo do fardo
 
-            for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) //iterando a struct de tipos de fardos em busca do indice do box
-                if (inputFardos[tipo].box == box) {
-                    projecao[tipo][col] = 1.0; //1 caso haja um fardo <tipo> na coluna <col>, 0 caso contrario 
-                    break;
-                }
+            if (loc_fardos[tipo].size() == 0) //se for o primeiro elemento do vetor (necessario pois nao é possivel utilizar .back() em vetor vazio),
+                loc_fardos[tipo].push_back(static_cast<double>(coluna)); //inserir a coluna no vetor
+
+            if (loc_fardos[tipo].back() != (static_cast<double>(coluna))) //condicao para inserir colunas repetidas no vetor
+                loc_fardos[tipo].push_back(static_cast<double>(coluna)); //inserir a coluna no vetor
         }
 
-        for (unsigned int tipo = 0; tipo < inputFardos.size(); tipo++) { //iterando a struct para calcular a distancia projetada de cada tipo de fardo
-            base = -1.0; //inicializando a coluna base como -1 para ser sobrescrita pela primeira coluna com incidencia do fardo <tipo>
-            for (int col = 0; col < colunas; col++) { //iterando todas as colunas da matriz
-
-                if (projecao[tipo][col] == 1.0) { //somar a distancia entre as incidencias de fardos de mesmo tipo
-                    if (base == -1.0) //se for a primeira coluna do vetor com incidencia,
-                        base = static_cast<double>(col);
-
-                    distancia = static_cast<double>(col) - base;
-                    if (distancia != 0) //divisao por zero resulta em infinito negativo
-                        valores[chr] += 10.0 - (1.0 / distancia);
-                    base = static_cast<double>(col); //atualizando a coluna base para comparacao
+        for (tipo = 0; tipo < inputFardos.size(); tipo++) //iterando os tipos de fardos
+            if (loc_fardos[tipo].size() > 1) //se o fardo ocupar mais de duas colunas, continuar (c.c., nao há distancia para calcular)
+                for (unsigned int i = 0; i < loc_fardos[tipo].size() - 1; i++) { //iterando as colunas de localizacao
+                    j = i + 1;
+                    valores[chr] += loc_fardos[tipo][j] - loc_fardos[tipo][i];
                 }
-            }
-        }
     }
-    ga::fitval = valores;
-    return valores;
+    ga::fitval = valores; //atualizando o valor fitness do algoritmo
+    return valores; //retornando o valor fitness do algoritmo
 }
-
 int ga::selecao() {
     //selecao de individuos por torneios binarios
 

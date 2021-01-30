@@ -33,4 +33,9 @@
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="resultados.csv">
+      <Filter>Arquivos de Recurso</Filter>
+    </None>
+  </ItemGroup>
 </Project>

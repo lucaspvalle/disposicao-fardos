@@ -80,7 +80,7 @@ void resultado_teste() {
 
     if (arq.is_open()) { //se aberto, escrever os parametros
         for (int i = 0; i < saida.size(); i++) {
-            arq << saida[i].idx << saida[i].pop << ',' << saida[i].grc << ',' << saida[i].mut << ',' << saida[i].fit_in << ',' << saida[i].fit_out << ',' << saida[i].tempo << ',' << endl;
+            arq << saida[i].idx << ',' << saida[i].pop << ',' << saida[i].grc << ',' << saida[i].mut << ',' << saida[i].fit_in << ',' << saida[i].fit_out << ',' << saida[i].tempo << ',' << endl;
         }
     }
     arq.close();
@@ -126,7 +126,7 @@ void testar() {
     unsigned int semente = 0, n;
     vector<planilha> inputFardos;
     vector<double> mut = { 0.01, 0.05, 0.1 };
-    vector<int> pop = { 10, 150, 250 }, grc = { 10, 50, 100 };
+    vector<int> pop = { 10, 50, 150 }, grc = { 10, 50, 100 };
 
     testes Iniciador;
     parametros = Iniciador.combinador();

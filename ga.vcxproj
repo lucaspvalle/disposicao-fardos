@@ -147,6 +147,9 @@
     <ClInclude Include="ga.h" />
     <ClInclude Include="testes.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="resultados.csv" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
