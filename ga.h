@@ -2,6 +2,7 @@
 #include <algorithm> //std::shuffle, std::max_element
 #include <random> //std::default_random_engine, std::rand
 #include <iostream> //std::time
+#include <cmath>
 #include <string>
 #include <vector>
 using namespace std;
@@ -43,17 +44,16 @@ public:
 
 	void seed(unsigned int s);
 	int categoria(string fardo);
-	bool checarLimites(int corte, int chr);
-	bool checarBloco(int corte, int chr);
-	limites gerarCorte(int range, int chr, string operador);
-	vector<string> popularFardos(vector<string> filho, vector<string> mapa, int corte);
+	bool checarLimites(int corte, int chr, int bloco);
+	limites gerarCorte(int range, int chr, int bloco);
+	vector<string> popularFardos(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte);
 
 	/*
 	Funções do algoritmo genético
 	*/
 
 	void init();
-	vector<double> fitness();
+	vector<double> fitness(int classes);
 	int selecao();
 	void cruzamento();
 	void mutacao();

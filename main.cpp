@@ -80,13 +80,13 @@ void resultado_teste() {
 
     if (arq.is_open()) { //se aberto, escrever os parametros
         for (int i = 0; i < saida.size(); i++) {
-            arq << saida[i].idx << ',' << saida[i].pop << ',' << saida[i].grc << ',' << saida[i].mut << ',' << saida[i].fit_in << ',' << saida[i].fit_out << ',' << saida[i].tempo << ',' << endl;
+            arq << saida[i].idx << ',' << saida[i].pop << ',' << saida[i].grc << ',' << saida[i].mut << ',' << saida[i].fit_in << ',' << saida[i].fit_out << ',' << saida[i].tempo << endl;
         }
     }
     arq.close();
 }
 
-void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente) {
+void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente, int classes) {
 
     vector<double> fitval;
     double fit_in, fit_out;
@@ -95,16 +95,15 @@ void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vect
     comeco = system_clock::now(); //iniciando cronometro
 
     ga algoritmo(populacaoTam, mutacaoProb, inputFardos); //inicializando o algoritmo genético
-    algoritmo.seed(semente);
-    //algoritmo.seed(static_cast<unsigned int>(time(NULL))); //semente para geracao de numeros aleatorios
+    algoritmo.seed(semente); //semente para geracao de numeros aleatorios
 
     algoritmo.init(); //inicializando a populacao para evolucao
-    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
+    fitval = algoritmo.fitness(classes); //avaliando a populacao inicializada
 
     fit_in = *max_element(fitval.begin(), fitval.end()); //valor fitness inicial do algoritmo
 
     for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
-        fitval = algoritmo.fitness();
+        fitval = algoritmo.fitness(classes);
         algoritmo.cruzamento();
         algoritmo.mutacao();
     }
@@ -114,6 +113,7 @@ void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vect
     fim = system_clock::now(); //parando cronometro
     duration<double> segundos = fim - comeco; //calculando tempo de execucao
 
+    //cout << fit_in << " e " << fit_out << endl;
     //mapa(algoritmo);
     saida.push_back({ idx, populacaoTam, geracaoTam, mutacaoProb, fit_in, fit_out, segundos.count()});
 
@@ -123,10 +123,10 @@ void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vect
 void testar() {
 
     vector<grupos> parametros;
-    unsigned int semente = 0, n;
+    unsigned int semente = 0, rodada = 0, n;
     vector<planilha> inputFardos;
     vector<double> mut = { 0.01, 0.05, 0.1 };
-    vector<int> pop = { 10, 50, 150 }, grc = { 10, 50, 100 };
+    vector<int> pop = { 100, 150, 200 }, grc = { 50, 75, 100 };
 
     testes Iniciador;
     parametros = Iniciador.combinador();
@@ -134,28 +134,34 @@ void testar() {
     for (unsigned int d = 0; d < 2; d++) {
         n = rand() % parametros.size();
 
-        //simulando uma instancia de entrada para o algoritmo
-        inputFardos = Iniciador.gerarInstancias(parametros[n].fardos, parametros[n].procedencia, parametros[n].porcentagem, parametros[n].classes);
+        for (unsigned int inst = 0; inst < 10; inst++) {
+            //simulando 10 instancias de entrada para o algoritmo
+            inputFardos = Iniciador.gerarInstancias(parametros[n].fardos, parametros[n].procedencia, parametros[n].porcentagem, parametros[n].classes);
+            rodada++;
+            cout << rodada << endl;
 
-        //executando o algoritmo para todas as combinacoes de parametros
-        for (unsigned int i = 0; i < pop.size(); i++)
-            for (unsigned int j = 0; j < grc.size(); j++)
-                for (unsigned int k = 0; k < mut.size(); k++)
-                        semente++, sumario(d, pop[i], grc[j], mut[k], inputFardos, semente); //executando o algoritmo com os parametros testes
-
+            //executando o algoritmo para todas as combinacoes de parametros
+            for (unsigned int i = 0; i < pop.size(); i++)
+                for (unsigned int j = 0; j < grc.size(); j++)
+                    for (unsigned int k = 0; k < mut.size(); k++)
+                        semente++, sumario(rodada, pop[i], grc[j], mut[k], inputFardos, semente, parametros[n].classes); //executando o algoritmo com os parametros testes
+        }
         parametros.erase(parametros.begin() + n);
     }
 }
 
 int main() {
 
-    ////FreeConsole();  //fechar o prompt de comando durante a execucao
-    
+    //FreeConsole();  //fechar o prompt de comando durante a execucao
+    //srand(static_cast<unsigned int>(time(NULL)));
+
     //vector<planilha> inputFardos;
+    //double mutacaoProb = 0.1;
+    //int populacaoTam = 150, geracaoTam = 50;
     //float criterio_peso = 220; //classificacao de tamanhos de fardos
 
     //inputFardos = ler_planilha(criterio_peso); //leitura de planilha para input
-    //sumario(populacaoTam, geracaoTam, mutacaoProb, inputFardos);
+    //sumario(0, populacaoTam, geracaoTam, mutacaoProb, inputFardos, static_cast<double>(time(NULL)));
 
     testar();
     resultado_teste();
