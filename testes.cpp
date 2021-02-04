@@ -48,7 +48,6 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
     int num_fardos, num_proc, qtd = 0, a, b, pequenos = 0, grandes = 0, p, g, var;
 
     default_random_engine generator; //mecanismo de geracao de numeros aleatorios
-    srand(static_cast<unsigned int>(time(NULL)));
 
     switch (nivel_fardos) { //parametrizando o nivel de fardos a serem alocados
     case 1: //nivel normal
@@ -124,8 +123,8 @@ vector<planilha> testes::gerarInstancias(int nivel_fardos, int nivel_proc, doubl
 vector<grupos> testes::combinador() {
 
     vector<grupos> parametros;
-    vector<double> porcentagem = { 0.25, 0.50, 0.75 };
-    vector<int> fardos = { 1, 2 }, proc = { 1, 2, 3 }, classes = { 10, 15 };
+    vector<double> porcentagem = { 0.25, 0.5, 0.75 };
+    vector<int> fardos = { 1 }, proc = { 1, 2, 3 }, classes = { 5, 10, 15 };
 
     for (int i = 0; i < fardos.size(); i++)
         for (int j = 0; j < proc.size(); j++)

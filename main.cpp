@@ -113,7 +113,7 @@ void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vect
     fim = system_clock::now(); //parando cronometro
     duration<double> segundos = fim - comeco; //calculando tempo de execucao
 
-    //cout << fit_in << " e " << fit_out << endl;
+    //cout << fit_out << " com diferenca de " << fit_out - fit_in << endl;
     //mapa(algoritmo);
     saida.push_back({ idx, populacaoTam, geracaoTam, mutacaoProb, fit_in, fit_out, segundos.count()});
 
@@ -126,7 +126,7 @@ void testar() {
     unsigned int semente = 0, rodada = 0, n;
     vector<planilha> inputFardos;
     vector<double> mut = { 0.01, 0.05, 0.1 };
-    vector<int> pop = { 100, 150, 200 }, grc = { 50, 75, 100 };
+    vector<int> pop = { 10, 50, 100 }, grc = { 10, 50, 100 };
 
     testes Iniciador;
     parametros = Iniciador.combinador();
@@ -153,7 +153,7 @@ void testar() {
 int main() {
 
     //FreeConsole();  //fechar o prompt de comando durante a execucao
-    //srand(static_cast<unsigned int>(time(NULL)));
+    srand(static_cast<unsigned int>(time(NULL)));
 
     //vector<planilha> inputFardos;
     //double mutacaoProb = 0.1;

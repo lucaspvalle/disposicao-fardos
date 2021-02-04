@@ -26,6 +26,22 @@ int ga::categoria(string fardo) {
     return NULL;
 }
 
+double ga::faixas(double distancia) {
+
+    double largura, tamanho, intervalo = 0;
+
+    largura = ceil(sqrt(colunas));
+    tamanho = colunas / largura;
+
+    for (double i = 0; i < largura; i++) {
+
+        intervalo = i * tamanho;
+        if (distancia >= intervalo && distancia < intervalo + tamanho)
+            return i + 1;
+    }
+    return 0;
+}
+
 bool ga::checarLimites(int corte, int chr, int bloco = NULL) {
     //checar se o limite do corte nao está pegando um fardo ao meio
 
@@ -183,6 +199,7 @@ void ga::init() {
 vector<double> ga::fitness(int classes) {
     //funcao fitness de avaliacao
 
+    double peso;
     int tipo, coluna, j, distancia;
     vector<double> valores(populacaoTam, 0.0); //vetor com os valores fitness de cada individuo
 
@@ -200,12 +217,15 @@ vector<double> ga::fitness(int classes) {
         }
 
         for (tipo = 0; tipo < loc_fardos.size(); tipo++) //iterando os tipos de fardos
-            if (loc_fardos[tipo].size() > 1) //se o fardo ocupar mais de duas colunas, continuar (c.c., nao há distancia para calcular)
+            if (loc_fardos[tipo].size() > 1) { //se o fardo ocupar mais de duas colunas, continuar (c.c., nao há distancia para calcular)
+                
+                peso = static_cast<double>(loc_fardos[tipo].size());
                 for (unsigned int i = 0; i < loc_fardos[tipo].size() - 1; i++) { //iterando as colunas de localizacao
                     j = i + 1;
                     distancia = loc_fardos[tipo][j] - loc_fardos[tipo][i];
-                    valores[chr] += 10.0 - 10.0 / (static_cast<double>(distancia) + 1);
+                    valores[chr] += peso * faixas(static_cast<double>(distancia));
                 }
+            }
     }
     ga::fitval = valores; //atualizando o valor fitness do algoritmo
     return valores; //retornando o valor fitness do algoritmo
@@ -265,15 +285,12 @@ void ga::mutacao() {
     //mutacao por troca
 
     limites cortes;
-    double num_aleatorio;
-    int bloco = 3, tamanho = bloco * linhas;
+    int bloco = 6, tamanho = bloco * linhas;
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
-        num_aleatorio = rand() / (double)RAND_MAX; //numero aleatorio entre 0 e 1
-        if (num_aleatorio <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
+        if ((rand() / (double)RAND_MAX) <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
 
             cortes = gerarCorte(colunas - bloco, chr, bloco); //cortes de apoio para a mutacao
-
             while (checarLimites(cortes.inf, chr, bloco))
                 cortes.inf += linhas;
 
