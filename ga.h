@@ -44,7 +44,7 @@ public:
 
 	void seed(unsigned int s);
 	int categoria(string fardo);
-	double faixas(double distancia);
+	double faixas(int distancia);
 	bool checarLimites(int corte, int chr, int bloco);
 	limites gerarCorte(int range, int chr, int bloco);
 	vector<string> popularFardos(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte);

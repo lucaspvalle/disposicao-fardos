@@ -26,7 +26,7 @@ int ga::categoria(string fardo) {
     return NULL;
 }
 
-double ga::faixas(double distancia) {
+double ga::faixas(int distancia) {
 
     double largura, tamanho, intervalo = 0;
 
@@ -36,8 +36,8 @@ double ga::faixas(double distancia) {
     for (double i = 0; i < largura; i++) {
 
         intervalo = i * tamanho;
-        if (distancia >= intervalo && distancia < intervalo + tamanho)
-            return i + 1;
+        if (static_cast<double>(distancia) >= intervalo && static_cast<double>(distancia) < intervalo + tamanho)
+            return (i + 1);
     }
     return 0;
 }
@@ -167,10 +167,10 @@ Funções do algoritmo genético
 */
 
 void ga::init() {
-    //inicializador de populacao para o algoritmo
+    //inicializador de individuos para a populacao
 
-    vector<string> grandes, pequenos; //controle de fardos a serem misturados
     int idx = 0, p = 0, g = 0;
+    vector<string> grandes, pequenos; //controle de fardos a serem misturados
 
     for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
         if (inputFardos[i].tamanho == "pequeno") { //se o fardo for classificado como pequeno,
@@ -182,7 +182,6 @@ void ga::init() {
                 idx++, g++, grandes.push_back(to_string(idx) + 'a');
         }
     }
-
     ga::matrizTam = p * 2 + g * 3; //calculando o tamanho necessario matriz para acomodar todos os fardos
     ga::colunas = matrizTam / linhas; //calculando tamanho da coluna
 
@@ -197,33 +196,44 @@ void ga::init() {
 }
 
 vector<double> ga::fitness(int classes) {
-    //funcao fitness de avaliacao
+    //quantificacao do desempenho objetivo do individuo
 
     double peso;
-    int tipo, coluna, j, distancia;
+    int tipo, coluna, j, distancia, aux;
     vector<double> valores(populacaoTam, 0.0); //vetor com os valores fitness de cada individuo
 
     //construcao do vetor com localizacao dos tipos de fardos
     for (int chr = 0; chr < populacaoTam; chr++) { //para cada individuo,
-        vector<vector<int>> loc_fardos(classes, vector<int>(1, 0)); //vetor com a localizacao dos tipos de fardos ao longo das colunas
+        vector<int> ponderado(classes, 0); //vetor com a qtdade de fardos de cada tipo para penalizacao
+        vector<vector<int>> loc_fardos(classes); //vetor com a localizacao dos tipos de fardos ao longo das colunas
 
         for (int i = 0; i < matrizTam; i++) { //iterar todas as posicoes da matriz
-
             coluna = i / 4; //armazenando a coluna atual
             tipo = inputFardos[categoria(populacao[chr][i])].box; //armazenando o tipo do fardo
 
+            if (loc_fardos[tipo].size() == 0) //condicao para inserir colunas repetidas no vetor
+                loc_fardos[tipo].push_back(coluna); //inserir a coluna no vetor
+
             if (loc_fardos[tipo].back() != coluna) //condicao para inserir colunas repetidas no vetor
                 loc_fardos[tipo].push_back(coluna); //inserir a coluna no vetor
+        }
+        
+        for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterar todas as entradas de fardos
+            if (inputFardos[i].tamanho == "grande") //se for grande,
+                aux = 3; //penalizar com 3 pois eles sempre ocupam 3 colunas da matriz
+            else //se for pequeno,
+                aux = 1; //nao penalizar pois sempre ocupam apenas 1 coluna da matriz
+            ponderado[inputFardos[i].box] += inputFardos[i].qtdade * aux; //armazenar as quantidades
         }
 
         for (tipo = 0; tipo < loc_fardos.size(); tipo++) //iterando os tipos de fardos
             if (loc_fardos[tipo].size() > 1) { //se o fardo ocupar mais de duas colunas, continuar (c.c., nao há distancia para calcular)
                 
-                peso = static_cast<double>(loc_fardos[tipo].size());
+                peso = static_cast<double>(loc_fardos[tipo].size()) / static_cast<double>(ponderado[tipo]); //penalizacao por % de colunas ocupadas
                 for (unsigned int i = 0; i < loc_fardos[tipo].size() - 1; i++) { //iterando as colunas de localizacao
-                    j = i + 1;
-                    distancia = loc_fardos[tipo][j] - loc_fardos[tipo][i];
-                    valores[chr] += peso * faixas(static_cast<double>(distancia));
+                    j = i + 1; //proxima posicao do fardo na matriz
+                    distancia = loc_fardos[tipo][j] - loc_fardos[tipo][i]; //distancia entre os fardos
+                    valores[chr] += peso * faixas(distancia);
                 }
             }
     }
@@ -249,34 +259,34 @@ void ga::cruzamento() {
     limites cortes;
     string2d linhagem;
     int melhor, pai, mae;
+    vector<string>::iterator iterador;
 
-    //elitismo :: continuar com o melhor individuo na proxima geracao
-    melhor = static_cast<int>(max_element(fitval.begin(), fitval.end()) - fitval.begin());
-    linhagem.push_back(populacao[melhor]);
+    melhor = static_cast<int>(max_element(fitval.begin(), fitval.end()) - fitval.begin()); //elitismo
+    linhagem.push_back(populacao[melhor]); //manter o melhor individuo na proxima geracao
 
     for (int chr = 1; chr < populacaoTam; chr++) { //iterando ate que a linhagem tenha o tamanho da populacao
 
+        vector<string> filho(matrizTam, ""), pequenos, grandes;
+
         pai = selecao(), mae = selecao(); //selecionando dois genitores para linhagem                  
         cortes = gerarCorte(colunas, mae); //cortes de apoio para o cruzamento
-        vector<string> filho(matrizTam, ""), pequenos;
 
-        //cruzando o filho com a informacao genetica da MAE em um intervalo pré-definido de corte
-        copy(populacao[mae].begin() + cortes.inf, populacao[mae].begin() + cortes.sup, filho.begin() + cortes.inf);
+        copy(populacao[mae].begin() + cortes.inf, populacao[mae].begin() + cortes.sup, filho.begin() + cortes.inf); //corte dos genes da mae para o filho
 
-        for (int i = 0; i < matrizTam; i++) { //para todas as posicoes da matriz do PAI,
-
-            if (inputFardos[categoria(populacao[mae][i])].tamanho == "grande")
-                filho[i] = populacao[mae][i];
-
+        for (int i = 0; i < matrizTam; i++) { //iterando o pai
             if (populacao[pai][i].back() == 'a') { //caso o fardo esteja em sua posicao "a" (inicial),
-                auto filhoIt = find(filho.begin() + cortes.inf, filho.begin() + cortes.sup, populacao[pai][i]); //iterar em busca de duplicatas do corte proveniente da MAE
+                iterador = find(filho.begin() + cortes.inf, filho.begin() + cortes.sup, populacao[pai][i]); //o fardo do pai já está alocado no filho?
 
-                if (filhoIt == filho.begin() + cortes.sup && inputFardos[categoria(populacao[pai][i])].tamanho == "pequeno") //se nao há duplicatas,
-                    pequenos.push_back(populacao[pai][i]);
+                if (iterador == filho.begin() + cortes.sup) { //se não,
+                    if (inputFardos[categoria(populacao[pai][i])].tamanho == "pequeno") 
+                        pequenos.push_back(populacao[pai][i]); //adicioná-lo para inserção de fardos pequenos
+                    else
+                        grandes.push_back(populacao[pai][i]); //adicioná-lo para inserção de fardos grandes
+                }
             }
         }
-        filho = popularFardos(filho, pequenos, {}, cortes.sup); //populando o filho fora da area de corte
-        linhagem.push_back(filho);
+        filho = popularFardos(filho, pequenos, grandes, cortes.sup); //populando o filho fora da area de corte
+        linhagem.push_back(filho); //adicionando à linhagem
     }
     ga::populacao = linhagem;
 }
@@ -285,7 +295,7 @@ void ga::mutacao() {
     //mutacao por troca
 
     limites cortes;
-    int bloco = 6, tamanho = bloco * linhas;
+    int bloco = 3, tamanho = bloco * linhas;
 
     for (int chr = 0; chr < populacaoTam; chr++) { //iterando individuos
         if ((rand() / (double)RAND_MAX) <= mutacaoProb) { //ocorre apenas se o numero aleatorio for menor do que a probabilidade de mutacao
@@ -302,3 +312,4 @@ void ga::mutacao() {
         }
     }
 }
+
