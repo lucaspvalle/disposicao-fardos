@@ -24,9 +24,9 @@ class ga { //classe do algoritmo genetico
 public:
 
 	int populacaoTam; //tamanho da populacao
-	double mutacaoProb; //probabilidade de mutacao
+	double mutacaoProb, cruzamentoProb = 0.75; //probabilidade de mutacao
 	const int linhas = 4; //quantidade de linhas da matriz
-	int matrizTam, colunas;
+	int matrizTam, colunas, classes;
 
 	string2d populacao; //populacao de cromossomos
 	vector<double> fitval; //valores fitness da populacao

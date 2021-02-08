@@ -124,7 +124,7 @@ vector<grupos> testes::combinador() {
 
     vector<grupos> parametros;
     vector<double> porcentagem = { 0.25, 0.5, 0.75 };
-    vector<int> fardos = { 1 }, proc = { 1, 2, 3 }, classes = { 5, 10, 15 };
+    vector<int> fardos = { 1 }, proc = { 1, 2, 3 }, classes = { 10, 15, 20 };
 
     for (int i = 0; i < fardos.size(); i++)
         for (int j = 0; j < proc.size(); j++)

@@ -126,7 +126,7 @@ void testar() {
     unsigned int semente = 0, rodada = 0, n;
     vector<planilha> inputFardos;
     vector<double> mut = { 0.01, 0.05, 0.1 };
-    vector<int> pop = { 10, 25, 50 }, grc = { 10, 25, 50 };
+    vector<int> pop = { 10, 50, 100 }, grc = { 10, 50, 100 };
 
     testes Iniciador;
     parametros = Iniciador.combinador();

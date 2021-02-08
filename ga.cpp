@@ -199,7 +199,7 @@ vector<double> ga::fitness(int classes) {
     //quantificacao do desempenho objetivo do individuo
 
     double peso;
-    int tipo, coluna, j, distancia, aux;
+    int coluna, tipo, aux, distancia, j;
     vector<double> valores(populacaoTam, 0.0); //vetor com os valores fitness de cada individuo
 
     //construcao do vetor com localizacao dos tipos de fardos
@@ -217,7 +217,7 @@ vector<double> ga::fitness(int classes) {
             if (loc_fardos[tipo].back() != coluna) //condicao para inserir colunas repetidas no vetor
                 loc_fardos[tipo].push_back(coluna); //inserir a coluna no vetor
         }
-        
+
         for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterar todas as entradas de fardos
             if (inputFardos[i].tamanho == "grande") //se for grande,
                 aux = 3; //penalizar com 3 pois eles sempre ocupam 3 colunas da matriz
@@ -226,9 +226,9 @@ vector<double> ga::fitness(int classes) {
             ponderado[inputFardos[i].box] += inputFardos[i].qtdade * aux; //armazenar as quantidades
         }
 
-        for (tipo = 0; tipo < loc_fardos.size(); tipo++) //iterando os tipos de fardos
+        for (tipo = 0; tipo < loc_fardos.size(); tipo++) { //iterando os tipos de fardos
             if (loc_fardos[tipo].size() > 1) { //se o fardo ocupar mais de duas colunas, continuar (c.c., nao há distancia para calcular)
-                
+
                 peso = static_cast<double>(loc_fardos[tipo].size()) / static_cast<double>(ponderado[tipo]); //penalizacao por % de colunas ocupadas
                 for (unsigned int i = 0; i < loc_fardos[tipo].size() - 1; i++) { //iterando as colunas de localizacao
                     j = i + 1; //proxima posicao do fardo na matriz
@@ -236,6 +236,7 @@ vector<double> ga::fitness(int classes) {
                     valores[chr] += peso * faixas(distancia);
                 }
             }
+        }
     }
     ga::fitval = valores; //atualizando o valor fitness do algoritmo
     return valores; //retornando o valor fitness do algoritmo
@@ -244,13 +245,29 @@ vector<double> ga::fitness(int classes) {
 int ga::selecao() {
     //selecao de individuos por torneios binarios
 
-    int vencedor = 0, desafiante = 0;
+    int vencedor = rand() % populacaoTam, desafiante = 0;
 
-    do { //gerando dois individuos aleatorios
-        vencedor = rand() % populacaoTam, desafiante = rand() % populacaoTam;
-    } while (vencedor == desafiante);
+    for (int i = 0; i < 5; i++) {
+        do {
+            desafiante = rand() % populacaoTam;
+        } while (vencedor == desafiante);
 
-    return max(vencedor, desafiante); //o vencedor é quem possuir MAIOR valor fitness
+        if (fitval[desafiante] >= fitval[vencedor])
+            vencedor = desafiante;
+    }
+    return vencedor;
+
+    //int pai = 0, mae = 0;
+
+    ////testar torneio com mais pessoas!!!
+    //do { //gerando dois individuos aleatorios
+    //    pai = rand() % populacaoTam, mae = rand() % populacaoTam;
+    //} while (pai == mae);
+
+    //if (fitval[pai] >= fitval[mae]) //o vencedor é quem possuir MAIOR valor fitness
+    //    return pai;
+    //else
+    //    return mae;
 }
 
 void ga::cruzamento() {
@@ -258,19 +275,23 @@ void ga::cruzamento() {
 
     limites cortes;
     string2d linhagem;
-    int melhor, pai, mae;
+    int  pai, mae;
     vector<string>::iterator iterador;
 
-    melhor = static_cast<int>(max_element(fitval.begin(), fitval.end()) - fitval.begin()); //elitismo
-    linhagem.push_back(populacao[melhor]); //manter o melhor individuo na proxima geracao
-
-    for (int chr = 1; chr < populacaoTam; chr++) { //iterando ate que a linhagem tenha o tamanho da populacao
+    for (int chr = 0; chr < populacaoTam; chr++) { //iterando ate que a linhagem tenha o tamanho da populacao
 
         vector<string> filho(matrizTam, ""), pequenos, grandes;
+        pai = selecao(), mae = selecao(); //selecionando dois genitores para linhagem
 
-        pai = selecao(), mae = selecao(); //selecionando dois genitores para linhagem                  
+        if ((rand() / (double)RAND_MAX) >= cruzamentoProb) {
+            if (fitval[pai] >= fitval[mae])
+                linhagem.push_back(populacao[pai]);
+            else
+                linhagem.push_back(populacao[mae]);
+            continue;
+        }
+
         cortes = gerarCorte(colunas, mae); //cortes de apoio para o cruzamento
-
         copy(populacao[mae].begin() + cortes.inf, populacao[mae].begin() + cortes.sup, filho.begin() + cortes.inf); //corte dos genes da mae para o filho
 
         for (int i = 0; i < matrizTam; i++) { //iterando o pai
