@@ -101,7 +101,7 @@ void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vect
     fitval = algoritmo.fitness(classes); //avaliando a populacao inicializada
 
     fit_in = *max_element(fitval.begin(), fitval.end()); //valor fitness inicial do algoritmo
-
+    
     for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
         fitval = algoritmo.fitness(classes);
         algoritmo.cruzamento();
@@ -120,10 +120,40 @@ void sumario(int idx, int populacaoTam, int geracaoTam, double mutacaoProb, vect
     //MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 }
 
+//void testar() {
+//
+//    vector<grupos> parametros;
+//    unsigned int semente = 0, rodada = 0, n;
+//    vector<planilha> inputFardos;
+//    vector<double> mut = { 0.01, 0.05, 0.1 };
+//    vector<int> pop = { 50, 100, 200 }, grc = { 50, 100, 200 };
+//
+//    testes Iniciador;
+//    parametros = Iniciador.combinador();
+//
+//    for (unsigned int d = 0; d < 2; d++) {
+//        n = rand() % parametros.size();
+//
+//        for (unsigned int inst = 0; inst < 10; inst++) {
+//            //simulando 10 instancias de entrada para o algoritmo
+//            inputFardos = Iniciador.gerarInstancias(parametros[n].fardos, parametros[n].procedencia, parametros[n].porcentagem, parametros[n].classes);
+//            rodada++;
+//            cout << rodada << endl;
+//
+//            //executando o algoritmo para todas as combinacoes de parametros
+//            for (unsigned int i = 0; i < pop.size(); i++)
+//                for (unsigned int j = 0; j < grc.size(); j++)
+//                    for (unsigned int k = 0; k < mut.size(); k++)
+//                        semente++, sumario(rodada, pop[i], grc[j], mut[k], inputFardos, semente, parametros[n].classes); //executando o algoritmo com os parametros testes
+//        }
+//        parametros.erase(parametros.begin() + n);
+//    }
+//}
+
 void testar() {
 
     vector<grupos> parametros;
-    unsigned int semente = 0, rodada = 0, n;
+    unsigned int semente = 0, rodada = 0;
     vector<planilha> inputFardos;
     vector<double> mut = { 0.01, 0.05, 0.1 };
     vector<int> pop = { 10, 50, 100 }, grc = { 10, 50, 100 };
@@ -131,10 +161,8 @@ void testar() {
     testes Iniciador;
     parametros = Iniciador.combinador();
 
-    for (unsigned int d = 0; d < 2; d++) {
-        n = rand() % parametros.size();
-
-        for (unsigned int inst = 0; inst < 10; inst++) {
+    for (unsigned int n = 0; n < parametros.size(); n++) {
+        for (unsigned int inst = 0; inst < 2; inst++) {
             //simulando 10 instancias de entrada para o algoritmo
             inputFardos = Iniciador.gerarInstancias(parametros[n].fardos, parametros[n].procedencia, parametros[n].porcentagem, parametros[n].classes);
             rodada++;
@@ -146,9 +174,9 @@ void testar() {
                     for (unsigned int k = 0; k < mut.size(); k++)
                         semente++, sumario(rodada, pop[i], grc[j], mut[k], inputFardos, semente, parametros[n].classes); //executando o algoritmo com os parametros testes
         }
-        parametros.erase(parametros.begin() + n);
     }
 }
+
 
 int main() {
 

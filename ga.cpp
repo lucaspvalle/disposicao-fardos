@@ -27,11 +27,16 @@ int ga::categoria(string fardo) {
 }
 
 double ga::faixas(int distancia) {
+    //funcao para quebra da matriz em faixas de pontuacao para a distancia
 
     double largura, tamanho, intervalo = 0;
 
-    largura = ceil(sqrt(colunas));
-    tamanho = colunas / largura;
+    largura = ceil(sqrt(colunas)); //definindo a largura de acordo com a regra de classes de histogramas
+    tamanho = colunas / largura; //tamanho de faixas do conjunto
+
+    //se a distancia estiver na ultima faixa, penalizar com um valor menor
+    if (static_cast<double>(distancia) >= static_cast<double>(colunas) - largura)
+        return 1;
 
     for (double i = 0; i < largura; i++) {
 
@@ -166,11 +171,42 @@ vector<string> ga::popularFardos(vector<string> filho, vector<string> pequenos, 
 Funções do algoritmo genético
 */
 
+//void ga::init() {
+//    //inicializador de individuos para a populacao
+//
+//    int idx = 0, p = 0, g = 0;
+//    vector<string> grandes, pequenos;
+//
+//    for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
+//        if (inputFardos[i].tamanho == "pequeno") { //se o fardo for classificado como pequeno,
+//            for (int j = 0; j < inputFardos[i].qtdade; j++)
+//                idx++, p++, pequenos.push_back(to_string(idx) + 'a');
+//        }
+//        else { //se o fardo for classificado como grande,
+//            for (int j = 0; j < inputFardos[i].qtdade; j++)
+//                idx++, g++, grandes.push_back(to_string(idx) + 'a');
+//        }
+//    }
+//    ga::matrizTam = p * 2 + g * 3; //calculando o tamanho necessario matriz para acomodar todos os fardos
+//    ga::colunas = matrizTam / linhas; //calculando tamanho da coluna
+//
+//    string2d populacao(populacaoTam, vector<string>(matrizTam, "")); //inicializando a populacao com <populacaoTam> individuos de tamanho <matrizTam>
+//    for (int chr = 0; chr < populacaoTam; chr++) { //iterando os individuos (cromossomos)
+//
+//        random_shuffle(pequenos.begin(), pequenos.end()); //misturando a ordem de fardos a serem alocados
+//        random_shuffle(grandes.begin(), grandes.end()); //misturando a ordem de fardos a serem alocados
+//        populacao[chr] = popularFardos(populacao[chr], pequenos, grandes, 0); //preenchendo os espacos vazios do individuo
+//    }
+//    ga::populacao = populacao;
+//}
+
 void ga::init() {
     //inicializador de individuos para a populacao
 
     int idx = 0, p = 0, g = 0;
-    vector<string> grandes, pequenos; //controle de fardos a serem misturados
+    vector<string> grandes, pequenos, gr_aux, pq_aux;
+    int var, varUm, varDois, varIterUm, varIterDois, i, j;
+    string variantes = { "abc" }; //identificador de posicoes do fardo na matriz
 
     for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterando a lista de fardos a serem misturados
         if (inputFardos[i].tamanho == "pequeno") { //se o fardo for classificado como pequeno,
@@ -190,10 +226,67 @@ void ga::init() {
 
         random_shuffle(pequenos.begin(), pequenos.end()); //misturando a ordem de fardos a serem alocados
         random_shuffle(grandes.begin(), grandes.end()); //misturando a ordem de fardos a serem alocados
-        populacao[chr] = popularFardos(populacao[chr], pequenos, grandes, 0); //preenchendo os espacos vazios do individuo
+
+        gr_aux = grandes, pq_aux = pequenos;
+
+        i = 0, j = 0; //iniciando o preenchimento a partir do corte superior na linha 0
+        while (gr_aux.size() != 0) { //enquanto houver fardos grandes a serem alocados,
+
+            var = j + (i * linhas), varUm = var + linhas, varDois = var + (2 * linhas); //pontos de insercao
+            if (varUm >= matrizTam || varDois >= matrizTam) { //se a matriz estiver no final, voltar para o comeco
+                i = 0, j = 0;
+                continue;
+            }
+
+            if (populacao[chr][var].empty() && populacao[chr][varUm].empty() && populacao[chr][varDois].empty()) { //se os espacos estiverem vazios (disponiveis),
+                gr_aux[0].pop_back(), gr_aux[1].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
+
+                for (int d = 0; d < 3; d++) { //iterar a quantidade de posicoes necessarias para o fardo
+                    varIterUm = var + d * linhas, varIterDois = varIterUm + 1;
+                    populacao[chr][varIterUm] = gr_aux[0] + variantes[d];
+                    populacao[chr][varIterDois] = gr_aux[1] + variantes[d];
+                }
+                gr_aux.erase(gr_aux.begin(), gr_aux.begin() + 2); //apagar da lista o fardo ja alocado
+            }
+            j += 2;
+
+            if (i >= colunas)
+                j = 0, i = 0;
+            if (j == linhas)
+                j = 0, i++;
+        }
+
+        while (pq_aux.size() != 0) { //enquanto houver fardos pequenos a serem alocados,
+
+            var = j + i * linhas, varUm = var + 1; //pontos de insercao
+            if (varUm >= matrizTam) { //se a matriz estiver no final, voltar para o comeco
+                i = 0, j = 0;
+                continue;
+            }
+
+            if (populacao[chr][var].empty() && populacao[chr][varUm].empty()) { //se os espacos estiverem vazios (disponiveis),
+                pq_aux[0].pop_back(); //retirar o identificador de posicao (o "a" de "123a")
+
+                for (int d = 0; d < 2; d++) { //iterar a quantidade de posicoes necessarias para o fardo
+                    varIterUm = var + d;
+                    populacao[chr][varIterUm] = pq_aux[0] + variantes[d];
+                }
+                pq_aux.erase(pq_aux.begin()); //apagar da lista o fardo ja alocado
+            }
+            j += 2; //proxima posicao disponivel
+
+            if (j == linhas)
+                j = 0, i++; //se estiver no fim da largura da matriz, ir para a proxima coluna
+            if (i == colunas)
+                i = 0; //se estiver no fim da matriz, voltar para o comeco
+        }
+
+
+
     }
     ga::populacao = populacao;
 }
+
 
 vector<double> ga::fitness(int classes) {
     //quantificacao do desempenho objetivo do individuo
@@ -207,15 +300,15 @@ vector<double> ga::fitness(int classes) {
         vector<int> ponderado(classes, 0); //vetor com a qtdade de fardos de cada tipo para penalizacao
         vector<vector<int>> loc_fardos(classes); //vetor com a localizacao dos tipos de fardos ao longo das colunas
 
-        for (int i = 0; i < matrizTam; i++) { //iterar todas as posicoes da matriz
+        for (int i = 0; i < matrizTam; i++) {
             coluna = i / 4; //armazenando a coluna atual
-            tipo = inputFardos[categoria(populacao[chr][i])].box; //armazenando o tipo do fardo
+            tipo = inputFardos[categoria(populacao[chr][i])].box;
 
             if (loc_fardos[tipo].size() == 0) //condicao para inserir colunas repetidas no vetor
-                loc_fardos[tipo].push_back(coluna); //inserir a coluna no vetor
+                loc_fardos[tipo].push_back(coluna);
 
             if (loc_fardos[tipo].back() != coluna) //condicao para inserir colunas repetidas no vetor
-                loc_fardos[tipo].push_back(coluna); //inserir a coluna no vetor
+                loc_fardos[tipo].push_back(coluna);
         }
 
         for (unsigned int i = 0; i < inputFardos.size(); i++) { //iterar todas as entradas de fardos
@@ -223,7 +316,7 @@ vector<double> ga::fitness(int classes) {
                 aux = 3; //penalizar com 3 pois eles sempre ocupam 3 colunas da matriz
             else //se for pequeno,
                 aux = 1; //nao penalizar pois sempre ocupam apenas 1 coluna da matriz
-            ponderado[inputFardos[i].box] += inputFardos[i].qtdade * aux; //armazenar as quantidades
+            ponderado[inputFardos[i].box] += inputFardos[i].qtdade * aux;
         }
 
         for (tipo = 0; tipo < loc_fardos.size(); tipo++) { //iterando os tipos de fardos
@@ -245,29 +338,17 @@ vector<double> ga::fitness(int classes) {
 int ga::selecao() {
     //selecao de individuos por torneios binarios
 
-    int vencedor = rand() % populacaoTam, desafiante = 0;
+    int vencedor = rand() % populacaoTam, desafiante = rand() % populacaoTam;
+    
+    do {
+        desafiante = rand() % populacaoTam;
+    } while (vencedor == desafiante);
 
-    for (int i = 0; i < 5; i++) {
-        do {
-            desafiante = rand() % populacaoTam;
-        } while (vencedor == desafiante);
+    //se o desafiante possuir MAIOR valor fitness, ele vence o torneio
+    if (fitval[desafiante] >= fitval[vencedor])
+        vencedor = desafiante;
 
-        if (fitval[desafiante] >= fitval[vencedor])
-            vencedor = desafiante;
-    }
     return vencedor;
-
-    //int pai = 0, mae = 0;
-
-    ////testar torneio com mais pessoas!!!
-    //do { //gerando dois individuos aleatorios
-    //    pai = rand() % populacaoTam, mae = rand() % populacaoTam;
-    //} while (pai == mae);
-
-    //if (fitval[pai] >= fitval[mae]) //o vencedor é quem possuir MAIOR valor fitness
-    //    return pai;
-    //else
-    //    return mae;
 }
 
 void ga::cruzamento() {
@@ -333,4 +414,3 @@ void ga::mutacao() {
         }
     }
 }
-
