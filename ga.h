@@ -2,6 +2,7 @@
 #include <algorithm> //std::shuffle, std::max_element
 #include <random> //std::default_random_engine, std::rand
 #include <iostream> //std::time
+#include <fstream>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -15,6 +16,11 @@ typedef struct {
 	float peso;
 	string procedencia, tamanho;
 } planilha;
+
+typedef struct {
+	int fardo, classe;
+	string procedencia, tamanho;
+} id;
 
 typedef struct {
 	int inf, sup;

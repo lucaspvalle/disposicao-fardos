@@ -7,8 +7,7 @@ typedef struct {
 } instancia;
 
 typedef struct {
-	int fardos, procedencia, classes;
-	double porcentagem;
+	int fardos, classes, porcentagem;
 } grupos;
 
 typedef struct {
@@ -19,7 +18,8 @@ typedef struct {
 class testes
 {
 public:
-	vector<planilha> gerarInstancias(int nivel_fardos, int nivel_proc, double proporcao, int classes);
+	vector<planilha> gerarInstancias(int fardos, int proporcao, int classes);
 	vector<grupos> combinador();
+	void resultados(vector<relatorio> saida);
 };
 
