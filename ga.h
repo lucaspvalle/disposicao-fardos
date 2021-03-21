@@ -53,7 +53,7 @@ public:
 	double faixas(int distancia);
 	bool checarLimites(int corte, int chr, int bloco);
 	limites gerarCorte(int range, int chr, int bloco);
-	vector<string> popularFardos(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte);
+	vector<string> preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte);
 
 	/*
 	Funções do algoritmo genético

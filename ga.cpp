@@ -108,39 +108,39 @@ limites ga::gerarCorte(int range, int chr, int bloco = NULL) {
     return { corteInf, corteSup };
 }
 
-vector<string> ga::popularFardos(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte) {
+vector<string> ga::preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte) {
     //suporte de preenchimento de fardos para operador OX
 
     int var, var_aux, quebra, i = corte / linhas, j = 0;
     string variantes = { "abc" }; //identificador de posicoes do fardo na matriz
 
     while (grandes.size() != 0) {
-        quebra = 0, var = j + i * linhas;
+            quebra = 0, var = j + i * linhas;
 
-        for (int d = 0; d < 3; d++) {
-            var_aux = var + d * linhas;
-            if (var_aux >= matrizTam || !filho[var_aux].empty())
-                quebra = 1;
-        }
-
-        if (quebra != 1) {
-            for (int n = 0; n < 2; n++) {
-                grandes[n].pop_back();
-
-                for (int d = 0; d < 3; d++) {
-                    var_aux = (var + n) + d * linhas;
-                    filho[var_aux] = grandes[n] + variantes[d];
-                }
+            for (int d = 0; d < 3; d++) {
+                var_aux = var + d * linhas;
+                if (var_aux >= matrizTam || !filho[var_aux].empty())
+                    quebra = 1;
             }
-            grandes.erase(grandes.begin(), grandes.begin() + 2);
-        }
-        i += 3;
 
-        if (i >= colunas)
-            j += 2, i = 0;
-        if (j == linhas)
-            j = 0;
-    }
+            if (quebra != 1) {
+                for (int n = 0; n < 2; n++) {
+                    grandes[n].pop_back();
+
+                    for (int d = 0; d < 3; d++) {
+                        var_aux = (var + n) + d * linhas;
+                        filho[var_aux] = grandes[n] + variantes[d];
+                    }
+                }
+                grandes.erase(grandes.begin(), grandes.begin() + 2);
+            }
+            i += 3;
+
+            if (i >= colunas)
+                j += 2, i = 0;
+            if (j == linhas)
+                j = 0;
+        }
 
     while (pequenos.size() != 0) {
         quebra = 0, var = j + i * linhas;
@@ -197,7 +197,7 @@ void ga::init() {
 
         random_shuffle(pequenos.begin(), pequenos.end()); //misturando a ordem de fardos a serem alocados
         random_shuffle(grandes.begin(), grandes.end()); //misturando a ordem de fardos a serem alocados
-        populacao[chr] = popularFardos(populacao[chr], pequenos, grandes, 0);
+        populacao[chr] = preenchimento(populacao[chr], pequenos, grandes, 0);
     }
     ga::populacao = populacao;
 }
@@ -301,7 +301,7 @@ void ga::cruzamento() {
                 }
             }
         }
-        filho = popularFardos(filho, pequenos, grandes, cortes.sup); //populando o filho fora da area de corte
+        filho = preenchimento(filho, pequenos, grandes, cortes.sup); //populando o filho fora da area de corte
         linhagem.push_back(filho); //adicionando à linhagem
     }
     ga::populacao = linhagem;

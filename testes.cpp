@@ -29,7 +29,7 @@ vector<planilha> testes::gerarInstancias(int fardos, int pct, int classes) {
         num_fardos = triangular(30, 160, 130);
         break;
     case 2: //nivel ampliado
-        num_fardos = triangular(300, 1600, 1300);
+        num_fardos = triangular(90, 480, 390);
         break;
     }
 
