@@ -202,11 +202,12 @@ void ga::init() {
     ga::populacao = populacao;
 }
 
-vector<double> ga::fitness(int classes) {
+vector<double> ga::fitness() {
     //quantificacao do desempenho objetivo do individuo
 
     double peso;
     int coluna, aux, distancia, j, tipo;
+    int classes = static_cast<int>(inputFardos.size());
     vector<double> valores(populacaoTam, 0.0); //vetor com os valores fitness de cada individuo
 
     //construcao do vetor com localizacao dos tipos de fardos
@@ -216,7 +217,7 @@ vector<double> ga::fitness(int classes) {
         
         for (int i = 0; i < matrizTam; i++) {
             coluna = i / 4; //armazenando a coluna atual
-            tipo = inputFardos[categoria(populacao[chr][i])].box;
+            tipo = categoria(populacao[chr][i]);
 
             if (loc_fardos[tipo].size() == 0) //condicao para inserir colunas repetidas no vetor
                 loc_fardos[tipo].push_back(coluna);
@@ -230,7 +231,7 @@ vector<double> ga::fitness(int classes) {
                 aux = 3; //penalizar com 3 pois eles sempre ocupam 3 colunas da matriz
             else //se for pequeno,
                 aux = 1; //nao penalizar pois sempre ocupam apenas 1 coluna da matriz
-            ponderado[inputFardos[i].box] += inputFardos[i].qtdade * aux;
+            ponderado[i] += inputFardos[i].qtdade * aux;
         }
         
         for (tipo = 0; tipo < loc_fardos.size(); tipo++) { //iterando os tipos de fardos

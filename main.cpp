@@ -12,6 +12,7 @@ vector<planilha> ler_planilha(float criterio_peso) {
     arq.open("temp.csv", ios::in);
     if (arq.is_open()) {
 
+        // TODO: atualizar modelo do arquivo: "SOBRA,QTDE A UTIL.,PROCEDENCIA,NC,PESO L,PESO B,BOX,68,54,COR\n"
         //modelo do arquivo: "box,procedencia,peso,qtdade\n"
         while (getline(arq, box, ',')) {
             getline(arq, procedencia, ',');
@@ -67,7 +68,7 @@ void mapa(ga algoritmo) {
     arq.close();
 }
 
-void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente, int classes) {
+void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planilha> inputFardos, unsigned int semente) {
 
     vector<double> fitval;
 
@@ -75,10 +76,10 @@ void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planil
     algoritmo.seed(semente); //semente para geracao de numeros aleatorios
 
     algoritmo.init(); //inicializando a populacao para evolucao
-    fitval = algoritmo.fitness(classes); //avaliando a populacao inicializada
+    fitval = algoritmo.fitness(); //avaliando a populacao inicializada
 
     for (int idx = 0; idx < geracaoTam; idx++) { //iteracao de geracoes
-        fitval = algoritmo.fitness(classes);
+        fitval = algoritmo.fitness();
         algoritmo.cruzamento();
         algoritmo.mutacao();
     }
@@ -89,13 +90,12 @@ void sumario(int populacaoTam, int geracaoTam, double mutacaoProb, vector<planil
 
 int main() {
 
-    FreeConsole();  //fechar o prompt de comando durante a execucao
+    //FreeConsole();  //fechar o prompt de comando durante a execucao
     vector<planilha> inputFardos;
 
     inputFardos = ler_planilha(220); //leitura de planilha para input
 
-    int classes = inputFardos.size(); //tem que agrupar as procedências de diferentes boxes!
-    sumario(900, 250, 0.05, inputFardos, static_cast<double>(time(NULL)), classes);
+    sumario(900, 250, 0.05, inputFardos, static_cast<double>(time(NULL)));
 
     return 0;
 }

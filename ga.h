@@ -60,7 +60,7 @@ public:
 	*/
 
 	void init();
-	vector<double> fitness(int classes);
+	vector<double> fitness();
 	int selecao();
 	void cruzamento();
 	void mutacao();
