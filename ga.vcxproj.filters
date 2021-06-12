@@ -18,23 +18,23 @@
     <ClCompile Include="main.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
-    <ClCompile Include="ga.cpp">
+    <ClCompile Include="source\ga.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
-    <ClCompile Include="testes.cpp">
+    <ClCompile Include="source\testes.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ga.h">
+    <ClInclude Include="headers\ga.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
-    <ClInclude Include="testes.h">
+    <ClInclude Include="headers\testes.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resultados.csv">
+    <None Include="data\resultados.csv">
       <Filter>Arquivos de Recurso</Filter>
     </None>
   </ItemGroup>

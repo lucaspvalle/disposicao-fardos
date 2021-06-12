@@ -1,4 +1,4 @@
-#include "testes.h"
+#include "../headers/testes.h"
 
 int triangular(double minn, double maxx, double moda) {
     //geracao de numeros aleatorios com distribuicao triangular

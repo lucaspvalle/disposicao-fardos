@@ -1,5 +1,5 @@
 #include <Windows.h> //MessageBoxA
-#include "ga.h"
+#include "headers/ga.h"
 using namespace std;
 
 vector<planilha> ler_planilha(float criterio_peso) {

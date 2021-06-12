@@ -1,4 +1,4 @@
-#include "ga.h"
+#include "../headers/ga.h"
 
 /*
 Funções de apoio

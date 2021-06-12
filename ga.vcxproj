@@ -139,16 +139,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ga.cpp" />
+    <ClCompile Include="source\ga.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="testes.cpp" />
+    <ClCompile Include="source\testes.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ga.h" />
-    <ClInclude Include="testes.h" />
+    <ClInclude Include="headers\ga.h" />
+    <ClInclude Include="headers\testes.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resultados.csv" />
+    <None Include="data\resultados.csv" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
