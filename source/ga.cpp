@@ -4,8 +4,93 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <Windows.h>
 using namespace std;
 
+
+/*
+Funções de integração
+*/
+
+__data__ ga::__ler_csv() {  // Entrada: Informações de Fardos
+
+    ifstream arquivo;
+
+    arquivo.open("data/input.csv", ios::in);
+    if (arquivo.is_open()) {
+
+        __data__ info_fardos;
+        const double criterio_peso = 220;
+
+        // Modelo do arquivo: "box,procedencia,peso,qtdade\n"
+        string box, procedencia, peso, qtdade, tamanho;
+
+        while (getline(arquivo, box, ',')) {
+            getline(arquivo, procedencia, ',');
+            getline(arquivo, peso, ',');
+            getline(arquivo, qtdade);
+
+            // Regra: caso o peso seja menor do que o critério, é classificado como pequeno
+            if (stod(peso) < criterio_peso)
+                tamanho = "pequeno";
+            else
+                tamanho = "grande";
+
+            info_fardos.push_back({ stoi(qtdade), box, procedencia, tamanho });
+        }
+        arquivo.close();
+
+        return info_fardos;
+    }
+    else {
+        MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
+        exit(1);
+    }
+}
+
+void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
+
+    const int idx_maior_fitness = static_cast<const int>(max_element(fitval.begin(), fitval.end()) - fitval.begin());
+    vector<string> vencedor = populacao[idx_maior_fitness];
+
+    ofstream arquivo;
+
+    arquivo.open("data/output.csv", ios::trunc);
+    if (arquivo.is_open()) {
+
+        int posicao = 0;
+        for (string fardo : vencedor) {  // Iterando célula a célula da matriz
+            if (!fardo.empty()) {
+
+                int categoria = __categoria(fardo);
+
+                string procedencia = info_fardos[categoria].procedencia;
+                string box = info_fardos[categoria].box;
+                string tamanho = info_fardos[categoria].tamanho;
+
+                if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
+                    arquivo << procedencia << " (" << box << "),";
+                }
+                else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
+                    if (tamanho == "grande")
+                        arquivo << "2" << ',';
+                    else
+                        arquivo << "1" << ',';
+                }
+            }
+            if (((posicao - 3) % linhas) == 0)  // Quebra de linha do arquivo quando estiver na 4ª linha da matriz
+                arquivo << "\n";
+
+            posicao++;
+        }
+        arquivo.close();
+    }
+    else {
+        MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
+        exit(1);
+    }
+    MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
+}
 
 /*
 Funções de apoio

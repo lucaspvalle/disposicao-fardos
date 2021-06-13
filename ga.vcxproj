@@ -139,12 +139,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="source\data.cpp" />
     <ClCompile Include="source\ga.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="headers\data.h" />
     <ClInclude Include="headers\ga.h" />
   </ItemGroup>
   <ItemGroup>

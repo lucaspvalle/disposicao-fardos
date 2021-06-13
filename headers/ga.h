@@ -1,19 +1,19 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "data.h"
 
 
-typedef std::vector<std::vector<std::string>> string2d;
-
-typedef struct {  // Armazenamento de input via planilha
-	int box;
+typedef struct
+{  // Armazenamento de input via planilha
 	int qtdade;
+	std::string box;
 	std::string procedencia;
 	std::string tamanho;
-} __input;
+} __input__;
 
-typedef std::vector<__input> input_csv;
+typedef std::vector<__input__> __data__;
+
+typedef std::vector<std::vector<std::string>> string2d;
 
 typedef struct {
 	int inf, sup;
@@ -32,11 +32,21 @@ public:
 	string2d populacao;  // População (cromossomo)
 	std::vector<double> fitval;  // Valores fitness da população
 
-	ga(input_csv input) {
-		input_csv info_fardos = input;
+	__data__ info_fardos;
+
+	ga() {
 		__seed();
+
+		info_fardos = __ler_csv();
 		init();
 	}
+
+	/*
+	Funções de integração
+	*/
+
+	__data__ __ler_csv();
+	void escrever_csv();
 
 	/*
 	Funções de apoio
