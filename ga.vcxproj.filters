@@ -28,8 +28,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="data\resultados.csv">
-      <Filter>Arquivos de Recurso</Filter>
-    </None>
+    <None Include="data\input.csv" />
   </ItemGroup>
 </Project>

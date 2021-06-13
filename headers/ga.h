@@ -3,12 +3,12 @@
 #include <vector>
 
 
-typedef struct
-{  // Armazenamento de input via planilha
+typedef struct {  // Armazenamento de input via planilha
 	int qtdade;
 	std::string box;
 	std::string procedencia;
 	std::string tamanho;
+	std::string cor;
 } __input__;
 
 typedef std::vector<__input__> __data__;
@@ -27,7 +27,7 @@ public:
 	const double probabilidade_cruzamento = 0.75;
 	const int linhas = 4;  // Largura da matriz de referência
 	const int bloco = 3;  // Parâmetro para definir a região de mutação
-	int tamanho_matriz, colunas, classes;  // TODO: const?
+	int tamanho_matriz, colunas;  // TODO: const?
 
 	string2d populacao;  // População (cromossomo)
 	std::vector<double> fitval;  // Valores fitness da população
@@ -35,8 +35,6 @@ public:
 	__data__ info_fardos;
 
 	ga() {
-		__seed();
-
 		info_fardos = __ler_csv();
 		init();
 	}
@@ -52,7 +50,6 @@ public:
 	Funções de apoio
 	*/
 
-	void __seed();
 	int __categoria(std::string fardo);
 	double __faixas(int distancia);
 	bool __checar_limites(int corte, int chr, bool checar_bloco);
