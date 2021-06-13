@@ -1,66 +1,60 @@
 #pragma once
-#include <algorithm> //std::shuffle, std::max_element
-#include <random> //std::default_random_engine, std::rand
-#include <iostream> //std::time
-#include <fstream>
-#include <cmath>
 #include <string>
 #include <vector>
-using namespace std;
+#include "data.h"
 
-typedef vector<vector<string>> string2d;
 
-typedef struct {
-	//armazenamento de dados da planilha
-	int box, qtdade;
-	float peso;
-	string procedencia, tamanho;
-} planilha;
+typedef std::vector<std::vector<std::string>> string2d;
 
-typedef struct {
-	int fardo, classe;
-	string procedencia, tamanho;
-} id;
+typedef struct {  // Armazenamento de input via planilha
+	int box;
+	int qtdade;
+	std::string procedencia;
+	std::string tamanho;
+} __input;
+
+typedef std::vector<__input> input_csv;
 
 typedef struct {
 	int inf, sup;
 } limites;
 
-class ga { //classe do algoritmo genetico
+class ga {  // Algoritmo Genético
 public:
 
-	int populacaoTam; //tamanho da populacao
-	double mutacaoProb, cruzamentoProb = 0.75; //probabilidade de mutacao
-	const int linhas = 4; //quantidade de linhas da matriz
-	int matrizTam, colunas, classes;
+	const int tamanho_populacao = 900;
+	const double probabilidade_mutacao = 0.05;
+	const double probabilidade_cruzamento = 0.75;
+	const int linhas = 4;  // Largura da matriz de referência
+	const int bloco = 3;  // Parâmetro para definir a região de mutação
+	int tamanho_matriz, colunas, classes;  // TODO: const?
 
-	string2d populacao; //populacao de cromossomos
-	vector<double> fitval; //valores fitness da populacao
-	vector<planilha> inputFardos; //dados de inputs dos fardos
+	string2d populacao;  // População (cromossomo)
+	std::vector<double> fitval;  // Valores fitness da população
 
-	ga(int pop, double probabilidade, vector<planilha> input) {
-		populacaoTam = pop;
-		mutacaoProb = probabilidade;
-		inputFardos = input;
+	ga(input_csv input) {
+		input_csv info_fardos = input;
+		__seed();
+		init();
 	}
 
 	/*
 	Funções de apoio
 	*/
 
-	void seed(unsigned int s);
-	int categoria(string fardo);
-	double faixas(int distancia);
-	bool checarLimites(int corte, int chr, int bloco);
-	limites gerarCorte(int range, int chr, int bloco);
-	vector<string> preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte);
+	void __seed();
+	int __categoria(std::string fardo);
+	double __faixas(int distancia);
+	bool __checar_limites(int corte, int chr, bool checar_bloco);
+	limites __gerar_corte(int range, int chr, bool checar_bloco);
+	std::vector<std::string> __preenchimento(std::vector<std::string> filho, std::vector<std::string> pequenos, std::vector<std::string> grandes, int corte);
 
 	/*
 	Funções do algoritmo genético
 	*/
 
 	void init();
-	vector<double> fitness();
+	std::vector<double> fitness();
 	int selecao();
 	void cruzamento();
 	void mutacao();
