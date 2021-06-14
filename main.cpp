@@ -1,16 +1,18 @@
 #include "headers/ga.h"
+#include <Windows.h>
 
 
 int main() {
 
-    //FreeConsole();
+    FreeConsole();
     const int tamanho_geracao = 250;
     
-    ga algoritmo;  // Inicializando algoritmo genético
-    std::vector<double> fitval = algoritmo.fitness();
+    // Inicializando algoritmo genético
+    ga algoritmo;
+    algoritmo.init();
 
     for (int individuo = 0; individuo < tamanho_geracao; individuo++) {
-        fitval = algoritmo.fitness();
+        algoritmo.fitness();
         algoritmo.cruzamento();
         algoritmo.mutacao();
     }
