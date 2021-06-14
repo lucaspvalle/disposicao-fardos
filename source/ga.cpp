@@ -12,14 +12,14 @@ using namespace std;
 Funções de integração
 */
 
-__data__ ga::__ler_csv() {  // Entrada: Informações de Fardos
+void ga::__ler_csv() {  // Entrada: Informações de Fardos
 
 	ifstream arquivo;
 
 	arquivo.open("data/input.csv", ios::in);
 	if (arquivo.is_open()) {
 
-		__data__ info_fardos;
+		info info_fardos;
 		const double criterio_peso = 220;
 
 		// Modelo do arquivo: "qtdade,procedencia,peso,box,cor\n"
@@ -41,7 +41,7 @@ __data__ ga::__ler_csv() {  // Entrada: Informações de Fardos
 		}
 		arquivo.close();
 
-		return info_fardos;
+		ga::fardos = info_fardos;
 	}
 	else {
 		MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
@@ -65,12 +65,13 @@ void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
 
 				int categoria = __categoria(fardo);
 
-				string procedencia = info_fardos[categoria].procedencia;
-				string box = info_fardos[categoria].box;
-				string tamanho = info_fardos[categoria].tamanho;
+				string procedencia = fardos[categoria].procedencia;
+				string box = fardos[categoria].box;
+				string tamanho = fardos[categoria].tamanho;
+				string cor = fardos[categoria].cor;
 
 				if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
-					arquivo << procedencia << " (" << box << "),";
+					arquivo << procedencia << " " << box << " " << cor << ", ";
 				}
 				else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
 					if (tamanho == "grande")
@@ -105,8 +106,8 @@ int ga::__categoria(string fardo) {  // Obtenção dos dados de entrada do fardo
 	int id = stoi(fardo);  // Converte a string para inteiro
 
 	int cumsum = 0;
-	for (unsigned int tipo = 0; tipo < info_fardos.size(); tipo++) {
-		cumsum += info_fardos[tipo].qtdade;
+	for (unsigned int tipo = 0; tipo < fardos.size(); tipo++) {
+		cumsum += fardos[tipo].qtdade;
 
 		if (id <= cumsum)
 			return tipo;
@@ -141,7 +142,7 @@ bool ga::__checar_limites(int corte, int chr, bool checar_bloco = false) {  // V
 			int celula = corte + i;
 
 			char letra = populacao[chr][celula].back();
-			string tamanho = info_fardos[__categoria(populacao[chr][celula])].tamanho;
+			string tamanho = fardos[__categoria(populacao[chr][celula])].tamanho;
 
 			// Regra: se o fardo grande estiver em sua posição inicial ("a"), ele NÃO está sendo cortado
 			if ((tamanho == "grande") && (letra != 'a'))
@@ -153,8 +154,8 @@ bool ga::__checar_limites(int corte, int chr, bool checar_bloco = false) {  // V
 			for (int i = 0; i < linhas; i++) {
 				int celula = corte + col * linhas + i;
 
-				string tamanho_fardo_na_iteracao = info_fardos[__categoria(populacao[chr][celula])].tamanho;
-				string tamanho_fardo_no_corte = info_fardos[__categoria(populacao[chr][corte])].tamanho;
+				string tamanho_fardo_na_iteracao = fardos[__categoria(populacao[chr][celula])].tamanho;
+				string tamanho_fardo_no_corte = fardos[__categoria(populacao[chr][corte])].tamanho;
 
 				// Regra: como um fardo grande possui o mesmo tamanho do bloco,
 				// um fardo pequeno na mesma coluna mostra que o fardo grande está sendo cortado
@@ -268,9 +269,9 @@ void ga::init() {  // Inicializador de indivíduos para a população
 	int idx = 0;
 	vector<string> grandes, pequenos;
 
-	for (unsigned int i = 0; i < info_fardos.size(); i++) {
-		string tamanho = info_fardos[i].tamanho;
-		int qtdade = info_fardos[i].qtdade;
+	for (unsigned int i = 0; i < fardos.size(); i++) {
+		string tamanho = fardos[i].tamanho;
+		int qtdade = fardos[i].qtdade;
 
 		for (int j = 0; j < qtdade; j++) {
 			if (tamanho == "pequeno")
@@ -300,9 +301,9 @@ void ga::init() {  // Inicializador de indivíduos para a população
 	ga::populacao = populacao;
 }
 
-vector<double> ga::fitness() {  // Quantificação do desempenho da matriz
+void ga::fitness() {  // Quantificação do desempenho da matriz
 
-	const int classes = static_cast<const int>(info_fardos.size());  // Quantidade de categorias de fardos
+	const int classes = static_cast<const int>(fardos.size());  // Quantidade de categorias de fardos
 	vector<double> valores(tamanho_populacao, 0.0);  // Valor fitness de cada indivíduo
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
@@ -322,7 +323,7 @@ vector<double> ga::fitness() {  // Quantificação do desempenho da matriz
 
 			// Armazenando espaço (em colunas) ocupado por cada categoria
 			if (populacao[individuo][celula].back() == 'a') {
-				if (info_fardos[categoria].tamanho == "grande")
+				if (fardos[categoria].tamanho == "grande")
 					ponderado[categoria] += 3.0;
 				else
 					ponderado[categoria] += 1.0;
@@ -348,7 +349,6 @@ vector<double> ga::fitness() {  // Quantificação do desempenho da matriz
 		}
 	}
 	ga::fitval = valores;
-	return valores;
 }
 
 int ga::selecao() {  // Torneios binários de seleção
@@ -391,7 +391,7 @@ void ga::cruzamento() {  // Order Crossover (OX)
 				auto iterador = find(filho.begin() + cortes.inf, filho.begin() + cortes.sup, fardo);  // O fardo do pai já está alocado no filho?
 
 				if (iterador == filho.begin() + cortes.sup) {  // Se não,
-					if (info_fardos[__categoria(fardo)].tamanho == "pequeno")
+					if (fardos[__categoria(fardo)].tamanho == "pequeno")
 						pequenos.push_back(fardo);
 					else
 						grandes.push_back(fardo);

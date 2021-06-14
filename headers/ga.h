@@ -11,7 +11,7 @@ typedef struct {  // Armazenamento de input via planilha
 	std::string cor;
 } __input__;
 
-typedef std::vector<__input__> __data__;
+typedef std::vector<__input__> info;
 
 typedef std::vector<std::vector<std::string>> string2d;
 
@@ -32,18 +32,17 @@ public:
 	string2d populacao;  // População (cromossomo)
 	std::vector<double> fitval;  // Valores fitness da população
 
-	__data__ info_fardos;
+	info fardos;
 
 	ga() {
-		info_fardos = __ler_csv();
-		init();
+		__ler_csv();
 	}
 
 	/*
 	Funções de integração
 	*/
 
-	__data__ __ler_csv();
+	void __ler_csv();
 	void escrever_csv();
 
 	/*
@@ -61,7 +60,7 @@ public:
 	*/
 
 	void init();
-	std::vector<double> fitness();
+	void fitness();
 	int selecao();
 	void cruzamento();
 	void mutacao();
