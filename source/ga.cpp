@@ -20,7 +20,7 @@ void ga::__ler_csv() {  // Entrada: Informações de Fardos
 	if (arquivo.is_open()) {
 
 		info info_fardos;
-		const double criterio_peso = 220;
+		const double criterio_peso = 220.0;
 
 		// Modelo do arquivo: "qtdade,procedencia,peso,box,cor\n"
 		string box, procedencia, peso, qtdade, tamanho, cor;
