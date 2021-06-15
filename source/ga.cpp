@@ -117,10 +117,10 @@ int ga::__categoria(string fardo) {  // Obtenção dos dados de entrada do fardo
 
 double ga::__faixas(int distancia) {  // Quebra da matriz em faixas de pontuação para distância
 
-	const double largura = ceil(sqrt(colunas));  // A largura é calculada de acordo com a regra de classes de histogramas
-	const double tamanho = colunas / largura;
 	const double dist = static_cast<const double>(distancia);
 	const double col = static_cast<const double>(colunas);
+	const double largura = ceil(sqrt(col));  // A largura é calculada de acordo com a regra de classes de histogramas
+	const double tamanho = col / largura;
 
 	if (dist >= col - largura)  // Minimiza a penalização da maior distância possível
 		return 1.0;
