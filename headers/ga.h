@@ -9,6 +9,7 @@ typedef struct {  // Armazenamento de input via planilha
 	std::string procedencia;
 	std::string tamanho;
 	std::string cor;
+	bool fantasma;
 } __input__;
 
 typedef std::vector<__input__> info;
@@ -19,6 +20,7 @@ typedef struct {
 	int inf, sup;
 } limites;
 
+
 class ga {  // Algoritmo Genético
 public:
 
@@ -27,7 +29,7 @@ public:
 	const double probabilidade_cruzamento = 0.75;
 	const int linhas = 4;  // Largura da matriz de referência
 	const int bloco = 3;  // Parâmetro para definir a região de mutação
-	int tamanho_matriz, colunas;  // TODO: const?
+	int tamanho_matriz, colunas;
 
 	string2d populacao;  // População (cromossomo)
 	std::vector<double> fitval;  // Valores fitness da população
@@ -51,7 +53,7 @@ public:
 
 	int __categoria(std::string fardo);
 	double __faixas(int distancia);
-	bool __checar_limites(int corte, int chr, bool checar_bloco);
+	bool __verifica_limites(int corte, int chr, bool checar_bloco);
 	limites __gerar_corte(int range, int chr, bool checar_bloco);
 	std::vector<std::string> __preenchimento(std::vector<std::string> filho, std::vector<std::string> pequenos, std::vector<std::string> grandes, int corte);
 

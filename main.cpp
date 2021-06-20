@@ -1,5 +1,7 @@
 #include "headers/ga.h"
 #include <Windows.h>
+#include <random>
+#include <iostream>
 
 
 int main() {
@@ -7,6 +9,8 @@ int main() {
     FreeConsole();
     const int tamanho_geracao = 250;
     
+    srand(static_cast<unsigned int>(time(NULL)));
+
     // Inicializando algoritmo genético
     ga algoritmo;
     algoritmo.init();

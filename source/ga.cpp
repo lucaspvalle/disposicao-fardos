@@ -1,9 +1,7 @@
 #include "../headers/ga.h"
 #include <algorithm>
 #include <random>
-#include <iostream>
 #include <fstream>
-#include <cmath>
 #include <Windows.h>
 using namespace std;
 
@@ -24,6 +22,7 @@ void ga::__ler_csv() {  // Entrada: Informações de Fardos
 
 		// Modelo do arquivo: "qtdade,procedencia,peso,box,cor\n"
 		string box, procedencia, peso, qtdade, tamanho, cor;
+		bool fantasma = false;
 
 		while (getline(arquivo, qtdade, ',')) {
 			getline(arquivo, procedencia, ',');
@@ -37,7 +36,7 @@ void ga::__ler_csv() {  // Entrada: Informações de Fardos
 			else
 				tamanho = "grande";
 
-			info_fardos.push_back({ stoi(qtdade), box, procedencia, tamanho, cor });
+			info_fardos.push_back({ stoi(qtdade), box, procedencia, tamanho, cor, fantasma });
 		}
 		arquivo.close();
 
@@ -135,7 +134,7 @@ double ga::__faixas(int distancia) {  // Quebra da matriz em faixas de pontuação
 	return 0.0;
 }
 
-bool ga::__checar_limites(int corte, int chr, bool checar_bloco = false) {  // Verificação de cortes ao meio de um fardo grande
+bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {  // Verificação de cortes ao meio de um fardo grande
 
 	if (!checar_bloco) {  // Não verificar blocos
 		for (int i = 0; i < linhas; i++) {
@@ -189,10 +188,10 @@ limites ga::__gerar_corte(int range, int chr, bool checar_bloco = false) {
 	corte_inf *= linhas, corte_sup *= linhas;
 
 	// Verificando se os limites gerados cortam algum fardo ao meio
-	while (__checar_limites(corte_inf, chr))
+	while (__verifica_limites(corte_inf, chr))
 		corte_inf -= linhas;
 
-	while (__checar_limites(corte_sup, chr))
+	while (__verifica_limites(corte_sup, chr))
 		corte_sup -= linhas;
 
 	return { corte_inf, corte_sup };
@@ -201,60 +200,69 @@ limites ga::__gerar_corte(int range, int chr, bool checar_bloco = false) {
 vector<string> ga::__preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte = 0) {
 	// Suporte de preenchimento de fardos para o operador OX
 
-	int var, var_aux, quebra, i = corte / linhas, j = 0;
 	string variantes = { "abc" };
+	int coluna_iterada = corte / linhas, linha_iterada = 0;
 
-	while (grandes.size() != 0) {
-		quebra = 0, var = j + i * linhas;
+	while (!grandes.empty()) {
+		bool continua = true;
+		int celula_inicial = linha_iterada + coluna_iterada * linhas;
 
-		for (int d = 0; d < 3; d++) {
-			var_aux = var + d * linhas;
-			if (var_aux >= tamanho_matriz || !filho[var_aux].empty())
-				quebra = 1;
+		for (int espaco_ocupado = 0; espaco_ocupado < 3; espaco_ocupado++) {
+			int celula_iterada = celula_inicial + espaco_ocupado * linhas;
+
+			// Regra: se a célula iterada não extrapolar os limites da matriz OU estiver preenchida, continua
+			if (celula_iterada >= tamanho_matriz || !filho[celula_iterada].empty())
+				continua = false;
 		}
 
-		if (quebra != 1) {
-			for (int n = 0; n < 2; n++) {
-				grandes[n].pop_back();
+		if (continua) {
+			for (int qtd = 0; qtd < 2; qtd++) {  // Fardos grandes são alocados em pares
+				grandes[qtd].pop_back();  // Remove o identificador ("b" de "123b") para nova identificação
 
-				for (int d = 0; d < 3; d++) {
-					var_aux = (var + n) + d * linhas;
-					filho[var_aux] = grandes[n] + variantes[d];
+				for (int espaco_ocupado = 0; espaco_ocupado < 3; espaco_ocupado++) {
+					int celula_iterada = (celula_inicial + qtd) + espaco_ocupado * linhas;
+					filho[celula_iterada] = grandes[qtd] + variantes[espaco_ocupado];
 				}
 			}
 			grandes.erase(grandes.begin(), grandes.begin() + 2);
 		}
-		i += 3;
+		coluna_iterada += 3;
 
-		if (i >= colunas)
-			j += 2, i = 0;
-		if (j == linhas)
-			j = 0;
+		if (coluna_iterada >= colunas)
+			linha_iterada += 2, coluna_iterada = 0;
+
+		if (linha_iterada == linhas)
+			linha_iterada = 0;
 	}
 
-	while (pequenos.size() != 0) {
-		quebra = 0, var = j + i * linhas;
+	while (!pequenos.empty()) {
+		bool continua = true;
+		int celula_inicial = linha_iterada + coluna_iterada * linhas;
 
-		for (int d = 0; d < 2; d++) {
-			var_aux = var + d;
-			if (var_aux >= tamanho_matriz || !filho[var_aux].empty())
-				quebra = 1;
+		for (int espaco_ocupado = 0; espaco_ocupado < 2; espaco_ocupado++) {
+			int celula_iterada = celula_inicial + espaco_ocupado;
+
+			// Regra: se a célula iterada não extrapolar os limites da matriz OU estiver preenchida, continua
+			if (celula_iterada >= tamanho_matriz || !filho[celula_iterada].empty())
+				continua = false;
 		}
 
-		if (quebra != 1) {
-			pequenos[0].pop_back();
-			for (int d = 0; d < 2; d++) {
-				var_aux = var + d;
-				filho[var_aux] = pequenos[0] + variantes[d];
+		if (continua) {  // Fardos pequenos são alocados individualmente
+			pequenos[0].pop_back();  // Remove o identificador ("b" de "123b") para nova identificação
+
+			for (int espaco_ocupado = 0; espaco_ocupado < 2; espaco_ocupado++) {
+				int celula_iterada = celula_inicial + espaco_ocupado;
+				filho[celula_iterada] = pequenos[0] + variantes[espaco_ocupado];
 			}
-			pequenos.erase(pequenos.begin()); // Apaga da lista o fardo já alocado
+			pequenos.erase(pequenos.begin());
 		}
-		j += 2;
+		linha_iterada += 2;
 
-		if (j == linhas)
-			j = 0, i++;
-		if (i == colunas)
-			j = 0, i = 0;
+		if (linha_iterada == linhas)
+			linha_iterada = 0, coluna_iterada++;
+
+		if (coluna_iterada == colunas)
+			linha_iterada = 0, coluna_iterada = 0;
 	}
 	return filho;
 }
@@ -281,14 +289,39 @@ void ga::init() {  // Inicializador de indivíduos para a população
 		}
 	}
 
+	// Criando fardos fantasmas para melhor aproveitamento da matriz (se necessário)
+	int contagem_pequenos = static_cast<int>(pequenos.size()), pequenos_fantasmas = 0;
+	while ((contagem_pequenos % 3 != 0) || ((contagem_pequenos / 3) % 2 != 0)) {
+		pequenos_fantasmas++;
+		contagem_pequenos += pequenos_fantasmas;
+	}
+
+	int contagem_grandes = static_cast<int>(grandes.size()), grandes_fantasmas = 0;
+	while ((contagem_grandes % 2 != 0) || ((contagem_grandes / 2) % 2 != 0)) {
+		grandes_fantasmas++;
+		contagem_grandes += grandes_fantasmas;
+	}
+
+	if (pequenos_fantasmas > 0) {
+		fardos.push_back({ pequenos_fantasmas, "NDA", "NDA", "pequeno", "NDA", true });
+
+		for (int j = 0; j < pequenos_fantasmas; j++)
+				idx++, pequenos.push_back(to_string(idx) + 'a');
+	}
+
+	if (grandes_fantasmas > 0) {
+		fardos.push_back({ grandes_fantasmas, "NDA", "NDA", "grande", "NDA", true });
+
+		for (int j = 0; j < grandes_fantasmas; j++)
+				idx++, grandes.push_back(to_string(idx) + 'a');
+	}
+
 	// Calculando o tamanho necessário da matriz para acomodar todos os fardos
-	ga::tamanho_matriz = static_cast<int>(pequenos.size()) * 2 + static_cast<int>(grandes.size()) * 3;
-	ga::colunas = tamanho_matriz / linhas;
+	ga::tamanho_matriz = contagem_pequenos * 2 + contagem_grandes * 3;
+	ga::colunas = static_cast<int>(ceil(tamanho_matriz / linhas));
 
 	// Inicializando a população com indivíduos de tamanho pré-definido
 	string2d populacao(tamanho_populacao, vector<string>(tamanho_matriz, ""));
-
-	srand(static_cast<unsigned int>(time(NULL)));
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
 
@@ -414,10 +447,10 @@ void ga::mutacao() {  // Mutação por troca (swap)
 		if (numero_aleatorio <= probabilidade_mutacao) {
 			limites cortes = __gerar_corte(colunas - bloco, individuo, true);
 
-			while (__checar_limites(cortes.inf, individuo, true))
+			while (__verifica_limites(cortes.inf, individuo, true))
 				cortes.inf += linhas;
 
-			while (__checar_limites(cortes.sup, individuo, true))
+			while (__verifica_limites(cortes.sup, individuo, true))
 				cortes.sup += linhas;
 
 			// Swap nos intervalos dos cortes inferior e superior de acordo com o tamanho do bloco de troca
