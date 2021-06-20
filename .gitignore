@@ -338,8 +338,6 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
-/resultados.csv
-/data/Estoque de Fardos.xlsm
-/data/ESTOQUE Fr.xlsm
-/data/Estoque de Fardos - Copia.xlsm
-/data/input2.csv
+
+# Project files
+/data/
