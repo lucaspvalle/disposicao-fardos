@@ -68,8 +68,9 @@ void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
 				string box = fardos[categoria].box;
 				string tamanho = fardos[categoria].tamanho;
 				string cor = fardos[categoria].cor;
+				bool fantasma = fardos[categoria].fantasma;
 
-				if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
+				if (fardo.back() == 'a' && !fantasma) {  // Escrever apenas para a primeira ocorrência do fardo na matriz
 					arquivo << procedencia << " " << box << " " << cor << ", ";
 				}
 				else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
