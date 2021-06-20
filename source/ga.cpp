@@ -14,7 +14,7 @@ void ga::__ler_csv() {  // Entrada: Informações de Fardos
 
 	ifstream arquivo;
 
-	arquivo.open("data/input.csv", ios::in);
+	arquivo.open("data/temp.csv", ios::in);
 	if (arquivo.is_open()) {
 
 		info info_fardos;
@@ -55,7 +55,7 @@ void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
 
 	ofstream arquivo;
 
-	arquivo.open("data/output.csv", ios::trunc);
+	arquivo.open("data/temp.csv", ios::trunc);
 	if (arquivo.is_open()) {
 
 		int posicao = 0;
@@ -71,7 +71,7 @@ void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
 				bool fantasma = fardos[categoria].fantasma;
 
 				if (fardo.back() == 'a' && !fantasma) {  // Escrever apenas para a primeira ocorrência do fardo na matriz
-					arquivo << procedencia << " " << box << " " << cor << ", ";
+					arquivo << procedencia << " (" << cor << "), ";
 				}
 				else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
 					if (tamanho == "grande")
