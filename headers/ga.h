@@ -36,6 +36,8 @@ public:
 	int tamanho_matriz;  // Tamanho da matriz de referência disposta na linha de abertura
 	int colunas;  // Comprimento da matriz de referência
 
+	bool status;  // Verifica se a importação de dados ocorreu corretamente e pode iniciar o algoritmo
+
 	string2d populacao;  // População de fardos
 	std::vector<double> fitval;  // Valores fitness da população
 
@@ -43,7 +45,11 @@ public:
 
 	// Construtor do algoritmo genético
 	ga() {
-		__ler_csv();
+
+		if (__ler_csv())
+			status = true;
+		else
+			status = false;
 	}
 
 	/*
@@ -54,7 +60,7 @@ public:
 	//
 	// Input: arquivo CSV com fardos a serem misturados
 	// Output: estrutura legível para o algoritmo
-	void __ler_csv();
+	bool __ler_csv();
 
 	// Escrita de dados
 	//

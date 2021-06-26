@@ -10,7 +10,7 @@ using namespace std;
 Funções de integração
 */
 
-void ga::__ler_csv() {
+bool ga::__ler_csv() {
 
 	ifstream arquivo;
 
@@ -41,10 +41,11 @@ void ga::__ler_csv() {
 		arquivo.close();
 
 		ga::fardos = info_fardos;
+		return true;
 	}
 	else {
 		MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
-		exit(1);
+		return false;
 	}
 }
 
@@ -92,7 +93,6 @@ void ga::escrever_csv() {
 	}
 	else {
 		MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
-		exit(1);
 	}
 	MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
 }
