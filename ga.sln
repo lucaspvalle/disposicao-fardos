@@ -26,6 +26,7 @@ Global
 		{62A767BB-DF66-4189-818F-6B58F6281D8E}.Debug|x64.ActiveCfg = Debug
 		{62A767BB-DF66-4189-818F-6B58F6281D8E}.Debug|x86.ActiveCfg = Debug
 		{62A767BB-DF66-4189-818F-6B58F6281D8E}.Release|x64.ActiveCfg = Release
+		{62A767BB-DF66-4189-818F-6B58F6281D8E}.Release|x64.Build.0 = Release
 		{62A767BB-DF66-4189-818F-6B58F6281D8E}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
@@ -33,11 +34,5 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {36DDB1AC-6059-4677-9B47-6D98AD7488A0}
-	EndGlobalSection
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 EndGlobal
