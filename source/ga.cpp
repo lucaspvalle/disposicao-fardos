@@ -10,11 +10,11 @@ using namespace std;
 Funções de integração
 */
 
-void ga::__ler_csv() {  // Entrada: Informações de Fardos
+void ga::__ler_csv() {
 
 	ifstream arquivo;
 
-	arquivo.open("data/temp.csv", ios::in);
+	arquivo.open("temp.csv", ios::in);
 	if (arquivo.is_open()) {
 
 		info info_fardos;
@@ -48,14 +48,14 @@ void ga::__ler_csv() {  // Entrada: Informações de Fardos
 	}
 }
 
-void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
+void ga::escrever_csv() {
 
 	const int idx_maior_fitness = static_cast<const int>(max_element(fitval.begin(), fitval.end()) - fitval.begin());
 	vector<string> vencedor = populacao[idx_maior_fitness];
 
 	ofstream arquivo;
 
-	arquivo.open("data/temp.csv", ios::trunc);
+	arquivo.open("temp.csv", ios::trunc);
 	if (arquivo.is_open()) {
 
 		int posicao = 0;
@@ -70,8 +70,11 @@ void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
 				string cor = fardos[categoria].cor;
 				bool fantasma = fardos[categoria].fantasma;
 
-				if (fardo.back() == 'a' && !fantasma) {  // Escrever apenas para a primeira ocorrência do fardo na matriz
-					arquivo << procedencia << " (" << cor << "), ";
+				if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
+					if (!fantasma)
+						arquivo << procedencia << " (" << cor << "),";
+					else
+						arquivo << "NDA,";
 				}
 				else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
 					if (tamanho == "grande")
@@ -99,7 +102,7 @@ void ga::escrever_csv() {  // Saída: Mapa de Disposição de Fardos
 Funções de apoio
 */
 
-int ga::__categoria(string fardo) {  // Obtenção dos dados de entrada do fardo
+int ga::__categoria(string fardo) {
 
 	// Exemplo de string: "123b"
 	fardo.pop_back();  // Retira o último caracter ("b")
@@ -115,7 +118,7 @@ int ga::__categoria(string fardo) {  // Obtenção dos dados de entrada do fardo
 	return 0;
 }
 
-double ga::__faixas(int distancia) {  // Quebra da matriz em faixas de pontuação para distância
+double ga::__faixas(int distancia) {
 
 	const double dist = static_cast<const double>(distancia);
 	const double col = static_cast<const double>(colunas);
@@ -135,7 +138,7 @@ double ga::__faixas(int distancia) {  // Quebra da matriz em faixas de pontuação
 	return 0.0;
 }
 
-bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {  // Verificação de cortes ao meio de um fardo grande
+bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {
 
 	if (!checar_bloco) {  // Não verificar blocos
 		for (int i = 0; i < linhas; i++) {
@@ -199,7 +202,6 @@ limites ga::__gerar_corte(int range, int chr, bool checar_bloco = false) {
 }
 
 vector<string> ga::__preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte = 0) {
-	// Suporte de preenchimento de fardos para o operador OX
 
 	string variantes = { "abc" };
 	int coluna_iterada = corte / linhas, linha_iterada = 0;
@@ -273,7 +275,7 @@ vector<string> ga::__preenchimento(vector<string> filho, vector<string> pequenos
 Funções do algoritmo genético
 */
 
-void ga::init() {  // Inicializador de indivíduos para a população
+void ga::init() {
 
 	int idx = 0;
 	vector<string> grandes, pequenos;
@@ -335,7 +337,7 @@ void ga::init() {  // Inicializador de indivíduos para a população
 	ga::populacao = populacao;
 }
 
-void ga::fitness() {  // Quantificação do desempenho da matriz
+void ga::fitness() {
 
 	const int classes = static_cast<const int>(fardos.size());  // Quantidade de categorias de fardos
 	vector<double> valores(tamanho_populacao, 0.0);  // Valor fitness de cada indivíduo
@@ -385,7 +387,7 @@ void ga::fitness() {  // Quantificação do desempenho da matriz
 	ga::fitval = valores;
 }
 
-int ga::selecao() {  // Torneios binários de seleção
+int ga::selecao() {
 
 	int vencedor = rand() % tamanho_populacao, desafiante = rand() % tamanho_populacao;
 
@@ -398,7 +400,7 @@ int ga::selecao() {  // Torneios binários de seleção
 	return vencedor;
 }
 
-void ga::cruzamento() {  // Order Crossover (OX)
+void ga::cruzamento() {
 
 	string2d linhagem;
 
@@ -440,7 +442,7 @@ void ga::cruzamento() {  // Order Crossover (OX)
 	ga::populacao = linhagem;
 }
 
-void ga::mutacao() {  // Mutação por troca (swap)
+void ga::mutacao() {
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
 		double numero_aleatorio = rand() / (double)RAND_MAX;
