@@ -10,19 +10,33 @@ using namespace std;
 Funções de integração
 */
 
-bool ga::__ler_csv() {
+bool ga::__ler_csv(string diretorio) {
 
 	ifstream arquivo;
 
-	arquivo.open("temp.csv", ios::in);
+	arquivo.open(diretorio, ios::in);
 	if (arquivo.is_open()) {
 
 		info info_fardos;
 		const double criterio_peso = 220.0;
 
 		// Modelo do arquivo: "qtdade,procedencia,peso,box,cor\n"
-		string box, procedencia, peso, qtdade, tamanho, cor;
+		string integridade, box, procedencia, peso, qtdade, tamanho, cor;
 		bool fantasma = false;
+
+		// Confere se a estrutura do arquivo está correta
+		getline(arquivo, integridade, ',');
+		if (integridade != "Quantidade") {
+			MessageBoxA(
+				NULL,
+				(LPCSTR)"A estrutura do arquivo de entrada não corresponde ao esperado!\nProcedimento desabilitado.",
+				(LPCSTR)"Disposição de Fardos",
+				MB_ICONWARNING);
+			return false;
+		}
+
+		// Deleta o cabeçalho
+		getline(arquivo, integridade);
 
 		while (getline(arquivo, qtdade, ',')) {
 			getline(arquivo, procedencia, ',');
@@ -49,14 +63,14 @@ bool ga::__ler_csv() {
 	}
 }
 
-void ga::escrever_csv() {
+void ga::escrever_csv(string diretorio) {
 
 	const int idx_maior_fitness = static_cast<const int>(max_element(fitval.begin(), fitval.end()) - fitval.begin());
 	vector<string> vencedor = populacao[idx_maior_fitness];
 
 	ofstream arquivo;
 
-	arquivo.open("temp.csv", ios::trunc);
+	arquivo.open(diretorio, ios::trunc);
 	if (arquivo.is_open()) {
 
 		int posicao = 0;

@@ -4,12 +4,12 @@
 
 // Estrutura de dados para armazenamento de input via planilha
 typedef struct {
-	int qtdade;  // Quantidade de fardos a serem misturados
-	std::string box;  // Box de localização dos fardos no estoque da empresa
-	std::string procedencia;  // Procedência (origem) dos fardos
-	std::string tamanho;  // Tamanho dos fardos (pequenos ou grandes)
-	std::string cor;  // Cor dos fardos (branco, creme, ...)
-	bool fantasma;  // Fardos de apoio à construção da matriz (mas que não existem)
+	int qtdade;					// Quantidade de fardos a serem misturados
+	std::string box;			// Box de localização dos fardos no estoque da empresa
+	std::string procedencia;	// Procedência (origem) dos fardos
+	std::string tamanho;		// Tamanho dos fardos (pequenos ou grandes)
+	std::string cor;			// Cor dos fardos (branco, creme, ...)
+	bool fantasma;				// Fardos de apoio à construção da matriz (mas que não existem)
 } __input__;
 
 // Vetor de dados de input via planilha
@@ -28,29 +28,17 @@ typedef struct {
 class ga {
 public:
 
-	const int tamanho_populacao = 900;  // Tamanho da população de fardos
-	const double probabilidade_mutacao = 0.05;  // Probabilidade de ocorrer mutação no indivíduo
-	const double probabilidade_cruzamento = 0.75;  // Probabilidade de ocorrer cruzamento entre dois indivíduos
-	const int linhas = 4;  // Largura da matriz de referência
-	const int bloco = 3;  // Parâmetro para definir a região de mutação
-	int tamanho_matriz;  // Tamanho da matriz de referência disposta na linha de abertura
-	int colunas;  // Comprimento da matriz de referência
+	const int tamanho_populacao = 900;				// Tamanho da população de fardos
+	const double probabilidade_mutacao = 0.05;		// Probabilidade de ocorrer mutação no indivíduo
+	const double probabilidade_cruzamento = 0.75;	// Probabilidade de ocorrer cruzamento entre dois indivíduos
+	const int linhas = 4;							// Largura da matriz de referência
+	const int bloco = 3;							// Parâmetro para definir a região de mutação
+	int tamanho_matriz;								// Tamanho da matriz de referência disposta na linha de abertura
+	int colunas;									// Comprimento da matriz de referência
+	string2d populacao;								// População de fardos
+	std::vector<double> fitval;						// Valores fitness da população
+	info fardos;									// Fardos a serem misturados
 
-	bool status;  // Verifica se a importação de dados ocorreu corretamente e pode iniciar o algoritmo
-
-	string2d populacao;  // População de fardos
-	std::vector<double> fitval;  // Valores fitness da população
-
-	info fardos;  // Fardos a serem misturados
-
-	// Construtor do algoritmo genético
-	ga() {
-
-		if (__ler_csv())
-			status = true;
-		else
-			status = false;
-	}
 
 	/*
 	Funções de integração
@@ -60,13 +48,13 @@ public:
 	//
 	// Input: arquivo CSV com fardos a serem misturados
 	// Output: estrutura legível para o algoritmo
-	bool __ler_csv();
+	bool __ler_csv(std::string diretorio);
 
 	// Escrita de dados
 	//
 	// Input: melhor solução de disposição do algoritmo
 	// Output: arquivo CSV com estrutura legível para Macro do Excel construir o mapa
-	void escrever_csv();
+	void escrever_csv(std::string diretorio);
 
 	/*
 	Funções de apoio

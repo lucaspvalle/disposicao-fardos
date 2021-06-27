@@ -14,8 +14,10 @@
 #include <memory.h>
 #include <tchar.h>
 #include <ShObjIdl.h>
+#include <gdiplus.h>
 
 // Arquivos de Projeto
 #include <random>
 #include <iostream>
+#include <string>
 #include "headers/ga.h"

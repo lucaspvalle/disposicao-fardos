@@ -3,11 +3,17 @@
 #include "headers/framework.h"
 #include "headers/main.h"
 
-#define MAX_LOADSTRING 100
+#pragma comment (lib, "Gdiplus.lib")
+using namespace Gdiplus;
 
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
+
+// Arquivos de integração
+std::string entrada;
+std::string saida;
+
 
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -18,7 +24,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 Funções de Integração com o Algoritmo
 */
 
-void selecionar_arquivos(HWND hWnd) {
+void selecionar_arquivos(HWND hWnd, bool is_entrada) {
  
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
@@ -47,9 +53,16 @@ void selecionar_arquivos(HWND hWnd) {
                     hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
                     // Display the file name to the user.
-                    // TODO: gravar o nome do path em uma string
                     if (SUCCEEDED(hr)) {
-                        MessageBoxW(NULL, pszFilePath, L"File Path", MB_OK);
+                        
+                        std::wstring ws(pszFilePath);
+                        std::string temp(ws.begin(), ws.end());
+
+                        if (is_entrada)
+                            entrada = temp;
+                        else
+                            saida = temp;
+
                         CoTaskMemFree(pszFilePath);
                     }
                     pItem->Release();
@@ -70,21 +83,85 @@ void executar_algoritmo(HWND hWnd) {
     // Inicializando algoritmo genético
     ga algoritmo;
 
-    if (algoritmo.status) {
+    // Verificação do diretório de entrada
+    if (entrada.empty()) {
+        entrada = "temp.csv";  // Assume diretório específico para busca
+
+        MessageBoxA(
+            NULL,
+            (LPCSTR)"Estamos procurando por temp.csv na pasta do aplicativo para suprir a falta de um arquivo de entrada!",
+            (LPCSTR)"Disposição de Fardos",
+            MB_ICONWARNING);
+    }
+
+    // Verificação do diretório de saída
+    if (saida.empty()) {
+        saida = entrada;  // Assume diretório de entrada
+
+        MessageBoxA(
+            NULL,
+            (LPCSTR)"Sobrescreveremos o arquivo de entrada para suprir a falta de um arquivo de saida!",
+            (LPCSTR)"Disposição de Fardos",
+            MB_ICONWARNING);
+    }
+
+    // Continua apenas se a leitura não quebrar (retorna true ou false)
+    bool status = algoritmo.__ler_csv(entrada);
+
+    if (status) {
+
+        // Barra de progresso
+        RECT janela;
+        GetClientRect(hWnd, &janela);  // Área da interface
+
+        int scroll = GetSystemMetrics(SM_CYVSCROLL);  // Barra de rolagem
+        
+        HWND progresso = CreateWindowEx(
+            0,
+            PROGRESS_CLASS,
+            szTitle,
+            WS_CHILD | WS_VISIBLE,
+            janela.left,
+            janela.bottom - scroll,
+            janela.right,
+            scroll,
+            hWnd,
+            (HMENU)0,
+            NULL,
+            NULL);
+
+        SendMessage(progresso, PBM_SETRANGE, 0, MAKELPARAM(0, tamanho_geracao));  // Define o tamanho da barra
+        SendMessage(progresso, PBM_SETSTEP, (WPARAM)1, 0);                        // Define o incremeto da barra
+
         algoritmo.init();
 
         for (int individuo = 0; individuo < tamanho_geracao; individuo++) {
             algoritmo.fitness();
             algoritmo.cruzamento();
             algoritmo.mutacao();
+
+            SendMessage(progresso, PBM_STEPIT, 0, 0);  // Incrementa a barra
         }
-        algoritmo.escrever_csv();
+        algoritmo.escrever_csv(saida);
     }
 }
 
 /*
 Funções de Interface
 */
+
+void desenhar_imagem(HDC hdc)
+{
+    Graphics graphics(hdc);
+    Image image(L"data/Tela.jpg");
+    Pen pen(Color(255, 255, 0, 0), 2);
+
+    graphics.DrawImage(&image, 10, 10);
+    Rect destRect(200, 50, 150, 75);
+    graphics.DrawRectangle(&pen, destRect);
+
+    graphics.DrawImage(&image, destRect);
+}
 
 ATOM MyRegisterClass(HINSTANCE hInstance) {
 
@@ -97,12 +174,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAPADEFARDOS));
+    wcex.hIcon          = LoadIcon(hInstance, IDI_APPLICATION);
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MAPADEFARDOS);
     wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, IDI_APPLICATION);
 
     return RegisterClassExW(&wcex);
 }
@@ -113,8 +190,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
    // Criando a janela
    HWND hWnd = CreateWindowW(
        szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-       CW_USEDEFAULT, 0,  // Coordenadas x e y da janela
-       CW_USEDEFAULT, 0,  // Largura e comprimento da janela
+
+       CW_USEDEFAULT, 0,    // Coordenadas x e y da janela
+       400, 400,            // Largura e comprimento da janela
+
        nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
@@ -163,22 +242,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             {
             // Arquivo :: Seleciona Arquivo de Entrada 
             case ID_ARQUIVO_ENTRADA:
-                selecionar_arquivos(hWnd);
+                selecionar_arquivos(hWnd, true);
                 break;
 
             // Arquivo :: Seleciona Arquivo de Saída
             case ID_ARQUIVO_SAIDA:
-                selecionar_arquivos(hWnd);
+                selecionar_arquivos(hWnd, false);
                 break;
 
             // Arquivo :: Executa Algoritmo
             case ID_ARQUIVO_EXECUTAR:
                 executar_algoritmo(hWnd);
-                break;
-
-            // Arquivo :: Saída
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
                 break;
 
             // Ajuda :: Sobre
@@ -198,7 +272,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             
-            // TODO: Adicione qualquer código de desenho que use hdc aqui...
+            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+            desenhar_imagem(hdc);
             
             EndPaint(hWnd, &ps);
         }
@@ -225,6 +300,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+    ULONG_PTR token;
+    GdiplusStartupInput input = { 0 };
+
+    input.GdiplusVersion = 1;
+    GdiplusStartup(&token, &input, NULL);
+
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_MAPADEFARDOS, szWindowClass, MAX_LOADSTRING);
 
@@ -245,5 +326,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             DispatchMessage(&msg);
         }
     }
+    GdiplusShutdown(token);
+
     return (int)msg.wParam;
 }
