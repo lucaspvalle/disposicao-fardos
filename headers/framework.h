@@ -16,6 +16,8 @@
 #include <ShObjIdl.h>
 #include <gdiplus.h>
 
+#pragma comment (lib, "Gdiplus.lib")
+
 // Arquivos de Projeto
 #include <random>
 #include <iostream>

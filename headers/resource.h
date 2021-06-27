@@ -2,6 +2,7 @@
 // Arquivo de inclusão gerado pelo Microsoft Visual C++.
 // Usado por Mapa de Fardos.rc
 
+#define IDI_BACKGROUND					101
 #define IDD_MAPADEFARDOS_DIALOG         102
 #define IDS_APP_TITLE                   103
 #define IDD_ABOUTBOX                    103

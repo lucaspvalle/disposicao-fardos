@@ -44,4 +44,9 @@
       <Filter>Arquivos de Recurso</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="data\tela.png">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

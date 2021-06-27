@@ -152,6 +152,9 @@
   <ItemGroup>
     <ResourceCompile Include="Mapa de Fardos.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="data\tela.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

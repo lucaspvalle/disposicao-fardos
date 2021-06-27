@@ -1,9 +1,5 @@
-// Ponto de entrada para o aplicativo
-
 #include "headers/framework.h"
 #include "headers/main.h"
-
-#pragma comment (lib, "Gdiplus.lib")
 using namespace Gdiplus;
 
 HINSTANCE hInst;
@@ -14,11 +10,11 @@ WCHAR szWindowClass[MAX_LOADSTRING];
 std::string entrada;
 std::string saida;
 
-
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
 
 /*
 Funções de Integração com o Algoritmo
@@ -148,9 +144,63 @@ void executar_algoritmo(HWND hWnd) {
     }
 }
 
+
 /*
 Funções de Interface
 */
+
+Bitmap* LoadImageFromResource(HMODULE hMod, const wchar_t* resid, const wchar_t* restype)
+{
+    IStream* pStream = nullptr;
+    Bitmap* pBmp = nullptr;
+    HGLOBAL hGlobal = nullptr;
+
+    HRSRC hrsrc = FindResourceW(hInst, resid, restype);     // get the handle to the resource
+    if (hrsrc)
+    {
+        DWORD dwResourceSize = SizeofResource(hMod, hrsrc);
+        if (dwResourceSize > 0)
+        {
+            HGLOBAL hGlobalResource = LoadResource(hMod, hrsrc); // load it
+            if (hGlobalResource)
+            {
+                void* imagebytes = LockResource(hGlobalResource); // get a pointer to the file bytes
+
+                // copy image bytes into a real hglobal memory handle
+                hGlobal = ::GlobalAlloc(GHND, dwResourceSize);
+                if (hGlobal)
+                {
+                    void* pBuffer = ::GlobalLock(hGlobal);
+                    if (pBuffer)
+                    {
+                        memcpy(pBuffer, imagebytes, dwResourceSize);
+                        HRESULT hr = CreateStreamOnHGlobal(hGlobal, TRUE, &pStream);
+                        if (SUCCEEDED(hr))
+                        {
+                            // pStream now owns the global handle and will invoke GlobalFree on release
+                            hGlobal = nullptr;
+                            pBmp = new Bitmap(pStream);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (pStream)
+    {
+        pStream->Release();
+        pStream = nullptr;
+    }
+
+    if (hGlobal)
+    {
+        GlobalFree(hGlobal);
+        hGlobal = nullptr;
+    }
+
+    return pBmp;
+}
 
 ATOM MyRegisterClass(HINSTANCE hInstance) {
 
@@ -194,6 +244,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
    return TRUE;
 }
 
+
 // Manipulador de mensagem para a caixa 'sobre'.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -218,59 +269,55 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     
     switch (message) {
-    //case WM_CREATE:
-      //  break;
 
-    // Comandos da interface
+        // Comandos da interface
     case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
+    {
+        int wmId = LOWORD(wParam);
 
-            // Menu
-            switch (wmId)
-            {
+        // Menu
+        switch (wmId)
+        {
             // Arquivo :: Seleciona Arquivo de Entrada 
-            case ID_ARQUIVO_ENTRADA:
-                selecionar_arquivos(hWnd, true);
-                break;
+        case ID_ARQUIVO_ENTRADA:
+            selecionar_arquivos(hWnd, true);
+            break;
 
             // Arquivo :: Seleciona Arquivo de Saída
-            case ID_ARQUIVO_SAIDA:
-                selecionar_arquivos(hWnd, false);
-                break;
+        case ID_ARQUIVO_SAIDA:
+            selecionar_arquivos(hWnd, false);
+            break;
 
             // Arquivo :: Executa Algoritmo
-            case ID_ARQUIVO_EXECUTAR:
-                executar_algoritmo(hWnd);
-                break;
+        case ID_ARQUIVO_EXECUTAR:
+            executar_algoritmo(hWnd);
+            break;
 
             // Ajuda :: Sobre
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
 
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break;
+    }
+    break;
 
     // Escreve na tela
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-                 
-            Graphics graphics(hdc);
-            Image image(L"data/tela.png");
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
 
-            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-            graphics.DrawImage(&image, 0, 0);
-            
-            EndPaint(hWnd, &ps);
-        }
+        Graphics graphics(hdc);
+        Bitmap* pBmp = LoadImageFromResource(hInst, MAKEINTRESOURCE(IDI_BACKGROUND), L"PNG");
+        graphics.DrawImage(pBmp, 0, 0);
+
+        EndPaint(hWnd, &ps);
+    }
         break;
-
+    
     // Finaliza o aplicativo
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -294,8 +341,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     ULONG_PTR token;
     GdiplusStartupInput input = { 0 };
-
-    input.GdiplusVersion = 1;
     GdiplusStartup(&token, &input, NULL);
 
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
