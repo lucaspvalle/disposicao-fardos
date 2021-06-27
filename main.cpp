@@ -143,25 +143,14 @@ void executar_algoritmo(HWND hWnd) {
             SendMessage(progresso, PBM_STEPIT, 0, 0);  // Incrementa a barra
         }
         algoritmo.escrever_csv(saida);
+
+        DestroyWindow(progresso);
     }
 }
 
 /*
 Funções de Interface
 */
-
-void desenhar_imagem(HDC hdc)
-{
-    Graphics graphics(hdc);
-    Image image(L"data/Tela.jpg");
-    Pen pen(Color(255, 255, 0, 0), 2);
-
-    graphics.DrawImage(&image, 10, 10);
-    Rect destRect(200, 50, 150, 75);
-    graphics.DrawRectangle(&pen, destRect);
-
-    graphics.DrawImage(&image, destRect);
-}
 
 ATOM MyRegisterClass(HINSTANCE hInstance) {
 
@@ -189,10 +178,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
    // Criando a janela
    HWND hWnd = CreateWindowW(
-       szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+       szWindowClass, szTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
 
        CW_USEDEFAULT, 0,    // Coordenadas x e y da janela
-       400, 400,            // Largura e comprimento da janela
+       930, 580,            // Largura e comprimento da janela
 
        nullptr, nullptr, hInstance, nullptr);
 
@@ -271,9 +260,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            
+                 
+            Graphics graphics(hdc);
+            Image image(L"data/tela.png");
+
             FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-            desenhar_imagem(hdc);
+            graphics.DrawImage(&image, 0, 0);
             
             EndPaint(hWnd, &ps);
         }

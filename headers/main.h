@@ -5,6 +5,5 @@
 #define MAX_LOADSTRING 100
 
 COMDLG_FILTERSPEC rgSpec[] = {
-    { L"Arquivos de texto", L"*.txt;*.csv" },
-    { L"Todos os arquivos", L"*.*"}
+    { L"Arquivos de texto", L"*.txt;*.csv" }
 };
