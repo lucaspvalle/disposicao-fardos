@@ -1,6 +1,4 @@
 #pragma once
-#include <string>
-#include <vector>
 
 // Estrutura de dados para armazenamento de input via planilha
 typedef struct {

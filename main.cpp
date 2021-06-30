@@ -1,20 +1,12 @@
 #include "headers/framework.h"
 #include "headers/main.h"
-using namespace Gdiplus;
 
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
-// Arquivos de integração
-std::string entrada;
-std::string saida;
-
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
+std::string entrada; // Arquivo de integração para o input
+std::string saida;   // Arquivo de integração para o output
 
 /*
 Funções de Integração com o Algoritmo
@@ -22,44 +14,45 @@ Funções de Integração com o Algoritmo
 
 void selecionar_arquivos(HWND hWnd, bool is_entrada) {
  
+    // Inicializando Component Object Model (COM)
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
     if (SUCCEEDED(hr)) {
-        IFileOpenDialog* pFileOpen;
-        hr = CoCreateInstance(
-            CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog,
-            reinterpret_cast<void**>(&pFileOpen));
+
+        IFileOpenDialog* pFileOpen;  // Objeto para chamar a interface de abrir arquivos
+        hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
 
         if (SUCCEEDED(hr)) {
+            
             // Define os tipos de arquivos possíveis de serem abertos
-            hr = pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
-            hr = pFileOpen->SetDefaultExtension(L"csv;txt");
-            hr = pFileOpen->SetFileTypeIndex(1);
+            // filtros está definido no cabeçalho
+            hr = pFileOpen->SetFileTypes(ARRAYSIZE(filtros), filtros);
 
             // Mostra a janela para abrir arquivo
             hr = pFileOpen->Show(NULL);
 
-            // Pega o nome do arquivo
             if (SUCCEEDED(hr)) {
+
                 IShellItem* pItem;
-                hr = pFileOpen->GetResult(&pItem);
+                hr = pFileOpen->GetResult(&pItem);  // Pega o nome do arquivo
                 
                 if (SUCCEEDED(hr)) {
-                    PWSTR pszFilePath;
-                    hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
-                    // Display the file name to the user.
+                    PWSTR pszFilePath;
+                    hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);   // Pega o diretório do arquivo
+
                     if (SUCCEEDED(hr)) {
                         
-                        std::wstring ws(pszFilePath);
-                        std::string temp(ws.begin(), ws.end());
-
+                        std::wstring ws(pszFilePath);  // Transforma w_chart* para wstring
+                        std::string temp = std::filesystem::path(ws).string();  // Transforma wstring para string
+                        
+                        // Condição decisória de atribuição para o arquivo selecionado
                         if (is_entrada)
                             entrada = temp;
                         else
                             saida = temp;
 
-                        CoTaskMemFree(pszFilePath);
+                        CoTaskMemFree(pszFilePath);  // Libera a memória
                     }
                     pItem->Release();
                 }
@@ -106,31 +99,22 @@ void executar_algoritmo(HWND hWnd) {
 
     if (status) {
 
-        // Barra de progresso
+        // Construção da barra de progresso
         RECT janela;
         GetClientRect(hWnd, &janela);  // Área da interface
-
         int scroll = GetSystemMetrics(SM_CYVSCROLL);  // Barra de rolagem
         
         HWND progresso = CreateWindowEx(
-            0,
-            PROGRESS_CLASS,
-            szTitle,
-            WS_CHILD | WS_VISIBLE,
-            janela.left,
-            janela.bottom - scroll,
-            janela.right,
-            scroll,
-            hWnd,
-            (HMENU)0,
-            NULL,
-            NULL);
+            0, PROGRESS_CLASS, szTitle, WS_CHILD | WS_VISIBLE,
+            janela.left, janela.bottom - scroll, janela.right,
+            scroll, hWnd, (HMENU)0, NULL, NULL);
 
         SendMessage(progresso, PBM_SETRANGE, 0, MAKELPARAM(0, tamanho_geracao));  // Define o tamanho da barra
         SendMessage(progresso, PBM_SETSTEP, (WPARAM)1, 0);                        // Define o incremeto da barra
 
         algoritmo.init();
 
+        // Iteração do algoritmo genético
         for (int individuo = 0; individuo < tamanho_geracao; individuo++) {
             algoritmo.fitness();
             algoritmo.cruzamento();
@@ -140,7 +124,7 @@ void executar_algoritmo(HWND hWnd) {
         }
         algoritmo.escrever_csv(saida);
 
-        DestroyWindow(progresso);
+        DestroyWindow(progresso);  // Libera a barra de progresso
     }
 }
 
@@ -149,37 +133,34 @@ void executar_algoritmo(HWND hWnd) {
 Funções de Interface
 */
 
-Bitmap* LoadImageFromResource(HMODULE hMod, const wchar_t* resid, const wchar_t* restype)
-{
-    IStream* pStream = nullptr;
-    Bitmap* pBmp = nullptr;
-    HGLOBAL hGlobal = nullptr;
+Gdiplus::Bitmap* carrega_imagem(HMODULE hMod, const wchar_t* resid, const wchar_t* restype) {
 
-    HRSRC hrsrc = FindResourceW(hInst, resid, restype);     // get the handle to the resource
-    if (hrsrc)
-    {
-        DWORD dwResourceSize = SizeofResource(hMod, hrsrc);
-        if (dwResourceSize > 0)
-        {
-            HGLOBAL hGlobalResource = LoadResource(hMod, hrsrc); // load it
-            if (hGlobalResource)
-            {
-                void* imagebytes = LockResource(hGlobalResource); // get a pointer to the file bytes
+    IStream* pStream = nullptr;  // Ponteiro para o arquivo de input da imagem
+    Gdiplus::Bitmap* pBmp = nullptr;  // Ponteiro para o arquivo de imagem
+    HGLOBAL hGlobal = nullptr;  // Ponteiro para a memória alocada
+    HRSRC hrsrc = FindResourceW(hInst, resid, restype);  // Pega o recurso utilizado na interface   
 
-                // copy image bytes into a real hglobal memory handle
-                hGlobal = ::GlobalAlloc(GHND, dwResourceSize);
-                if (hGlobal)
-                {
+    if (hrsrc) {
+
+        DWORD dwResourceSize = SizeofResource(hMod, hrsrc);  // Retorna o valor em bytes do recurso
+        if (dwResourceSize > 0) {
+
+            HGLOBAL hGlobalResource = LoadResource(hMod, hrsrc);  // Ponteiro para o primeiro byte do recurso em memória
+            if (hGlobalResource) {
+
+                void* imagebytes = LockResource(hGlobalResource);  // Ponteiro para o recurso em memória
+                hGlobal = ::GlobalAlloc(GHND, dwResourceSize);  // Copia a alocação de memória da imagem
+                if (hGlobal) {
+
                     void* pBuffer = ::GlobalLock(hGlobal);
-                    if (pBuffer)
-                    {
+                    if (pBuffer) {
+
                         memcpy(pBuffer, imagebytes, dwResourceSize);
-                        HRESULT hr = CreateStreamOnHGlobal(hGlobal, TRUE, &pStream);
-                        if (SUCCEEDED(hr))
-                        {
-                            // pStream now owns the global handle and will invoke GlobalFree on release
+                        HRESULT hr = CreateStreamOnHGlobal(hGlobal, TRUE, &pStream);  // pStream agora tem o hGlobal
+                        if (SUCCEEDED(hr)) {
+                            
                             hGlobal = nullptr;
-                            pBmp = new Bitmap(pStream);
+                            pBmp = new Gdiplus::Bitmap(pStream);
                         }
                     }
                 }
@@ -187,14 +168,13 @@ Bitmap* LoadImageFromResource(HMODULE hMod, const wchar_t* resid, const wchar_t*
         }
     }
 
-    if (pStream)
-    {
+    // Libera as alocações de memória
+    if (pStream) {
         pStream->Release();
         pStream = nullptr;
     }
 
-    if (hGlobal)
-    {
+    if (hGlobal) {
         GlobalFree(hGlobal);
         hGlobal = nullptr;
     }
@@ -224,39 +204,33 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 }
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
-   hInst = hInstance;
 
-   // Criando a janela
-   HWND hWnd = CreateWindowW(
-       szWindowClass, szTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+    hInst = hInstance;
 
-       CW_USEDEFAULT, 0,    // Coordenadas x e y da janela
-       930, 580,            // Largura e comprimento da janela
+    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+        CW_USEDEFAULT, 0,    // Coordenadas x e y da janela
+        930, 580,            // Largura e comprimento da janela
+        nullptr, nullptr, hInstance, nullptr);
 
-       nullptr, nullptr, hInstance, nullptr);
+    if (!hWnd)
+        return FALSE;
 
-   if (!hWnd)
-      return FALSE;
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
+    return TRUE;
 }
 
+INT_PTR CALLBACK CaixasDialogo(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
-// Manipulador de mensagem para a caixa 'sobre'.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
     UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
+    switch (message) {
+
     case WM_INITDIALOG:
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
@@ -265,19 +239,18 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-// Procedimentos da interface
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     
     switch (message) {
 
-        // Comandos da interface
+    // Comandos da interface
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
 
         // Menu
-        switch (wmId)
-        {
+        switch (wmId) {
+
         // Arquivo :: Seleciona Arquivo de Entrada 
         case ID_ARQUIVO_ENTRADA:
             selecionar_arquivos(hWnd, true);
@@ -295,12 +268,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
         // Ajuda :: Manual de Uso
         case ID_AJUDA_MANUALDEUSO:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_MANUAL), hWnd, About);
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_MANUAL), hWnd, CaixasDialogo);
             break;
 
         // Ajuda :: Sobre
         case IDM_ABOUT:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, CaixasDialogo);
             break;
 
         default:
@@ -315,8 +288,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
 
-        Graphics graphics(hdc);
-        Bitmap* pBmp = LoadImageFromResource(hInst, MAKEINTRESOURCE(IDI_BACKGROUND), L"PNG");
+        Gdiplus::Graphics graphics(hdc);
+        Gdiplus::Bitmap* pBmp = carrega_imagem(hInst, MAKEINTRESOURCE(IDI_BACKGROUND), L"PNG");
         graphics.DrawImage(pBmp, 0, 0);
 
         EndPaint(hWnd, &ps);
@@ -334,25 +307,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
+
 /*
 Main
 */
 
-// Inicia o aplicativo
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow) {
 
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+    // Inicializando o Gdiplus
     ULONG_PTR token;
-    GdiplusStartupInput input = { 0 };
-    GdiplusStartup(&token, &input, NULL);
+    Gdiplus::GdiplusStartupInput input = { 0 };
+    Gdiplus::GdiplusStartup(&token, &input, NULL);
 
+    // Inicializando as strings globais
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_MAPADEFARDOS, szWindowClass, MAX_LOADSTRING);
-
     MyRegisterClass(hInstance);
 
+    // Inicializando a interface
     if (!InitInstance(hInstance, nCmdShow))
         return FALSE;
 
@@ -360,15 +335,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     MSG msg;
 
     // Loop de mensagem principal
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
+    while (GetMessage(&msg, nullptr, 0, 0)) {
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
     }
-    GdiplusShutdown(token);
+
+    // Encerra o Gdiplus
+    Gdiplus::GdiplusShutdown(token);
 
     return (int)msg.wParam;
 }

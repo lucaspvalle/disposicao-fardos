@@ -1,10 +1,5 @@
-#include "../headers/ga.h"
-#include <algorithm>
-#include <random>
-#include <fstream>
-#include <Windows.h>
+#include "../headers/framework.h"
 using namespace std;
-
 
 /*
 Funções de integração
@@ -340,11 +335,14 @@ void ga::init() {
 	// Inicializando a população com indivíduos de tamanho pré-definido
 	string2d populacao(tamanho_populacao, vector<string>(tamanho_matriz, ""));
 
+	std::random_device rd;
+	std::mt19937 g(rd());
+
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
 
 		// Misturando a ordem de fardos alocados
-		random_shuffle(pequenos.begin(), pequenos.end());
-		random_shuffle(grandes.begin(), grandes.end());
+		shuffle(pequenos.begin(), pequenos.end(), g);
+		shuffle(grandes.begin(), grandes.end(), g);
 
 		populacao[individuo] = __preenchimento(populacao[individuo], pequenos, grandes);
 	}
