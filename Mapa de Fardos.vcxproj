@@ -142,8 +142,8 @@
     <ClInclude Include="headers\framework.h" />
     <ClInclude Include="headers\ga.h" />
     <ClInclude Include="headers\main.h" />
-    <ClInclude Include="headers\resource.h" />
     <ClInclude Include="headers\targetver.h" />
+    <ClInclude Include="headers\resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

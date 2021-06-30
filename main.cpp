@@ -278,22 +278,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         // Menu
         switch (wmId)
         {
-            // Arquivo :: Seleciona Arquivo de Entrada 
+        // Arquivo :: Seleciona Arquivo de Entrada 
         case ID_ARQUIVO_ENTRADA:
             selecionar_arquivos(hWnd, true);
             break;
 
-            // Arquivo :: Seleciona Arquivo de Saída
+        // Arquivo :: Seleciona Arquivo de Saída
         case ID_ARQUIVO_SAIDA:
             selecionar_arquivos(hWnd, false);
             break;
 
-            // Arquivo :: Executa Algoritmo
+        // Arquivo :: Executa Algoritmo
         case ID_ARQUIVO_EXECUTAR:
             executar_algoritmo(hWnd);
             break;
 
-            // Ajuda :: Sobre
+        // Ajuda :: Manual de Uso
+        case ID_AJUDA_MANUALDEUSO:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_MANUAL), hWnd, About);
+            break;
+
+        // Ajuda :: Sobre
         case IDM_ABOUT:
             DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
             break;
