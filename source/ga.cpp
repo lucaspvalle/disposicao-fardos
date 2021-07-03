@@ -16,8 +16,8 @@ bool ga::__ler_csv(string diretorio) {
 		const double criterio_peso = 220.0;
 
 		// Modelo do arquivo: "qtdade,procedencia,peso,box,cor\n"
-		string integridade, box, procedencia, peso, qtdade, tamanho, cor;
-		bool fantasma = false;
+		string integridade, box, procedencia, peso, qtdade, cor;
+		bool is_grande, fantasma = false;
 
 		// Confere se a estrutura do arquivo está correta
 		getline(arquivo, integridade, ',');
@@ -41,11 +41,11 @@ bool ga::__ler_csv(string diretorio) {
 
 			// Regra: caso o peso seja menor do que o critério, é classificado como pequeno
 			if (stod(peso) < criterio_peso)
-				tamanho = "pequeno";
+				is_grande = false;
 			else
-				tamanho = "grande";
+				is_grande = true;
 
-			info_fardos.push_back({ stoi(qtdade), box, procedencia, tamanho, cor, fantasma });
+			info_fardos.push_back({ box, procedencia, cor, stoi(qtdade), is_grande, fantasma });
 		}
 		arquivo.close();
 
@@ -76,8 +76,8 @@ void ga::escrever_csv(string diretorio) {
 
 				string procedencia = fardos[categoria].procedencia;
 				string box = fardos[categoria].box;
-				string tamanho = fardos[categoria].tamanho;
 				string cor = fardos[categoria].cor;
+				bool is_grande = fardos[categoria].is_grande;
 				bool fantasma = fardos[categoria].fantasma;
 
 				if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
@@ -87,7 +87,7 @@ void ga::escrever_csv(string diretorio) {
 						arquivo << "NDA,";
 				}
 				else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
-					if (tamanho == "grande")
+					if (is_grande)
 						arquivo << "2" << ',';
 					else
 						arquivo << "1" << ',';
@@ -154,10 +154,10 @@ bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {
 			int celula = corte + i;
 
 			char letra = populacao[chr][celula].back();
-			string tamanho = fardos[__categoria(populacao[chr][celula])].tamanho;
+			bool is_grande = fardos[__categoria(populacao[chr][celula])].is_grande;
 
 			// Regra: se o fardo grande estiver em sua posição inicial ("a"), ele NÃO está sendo cortado
-			if ((tamanho == "grande") && (letra != 'a'))
+			if ((is_grande) && (letra != 'a'))
 				return true;
 		}
 	}
@@ -166,12 +166,12 @@ bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {
 			for (int i = 0; i < linhas; i++) {
 				int celula = corte + col * linhas + i;
 
-				string tamanho_fardo_na_iteracao = fardos[__categoria(populacao[chr][celula])].tamanho;
-				string tamanho_fardo_no_corte = fardos[__categoria(populacao[chr][corte])].tamanho;
+				bool fardo_na_iteracao_is_grande = fardos[__categoria(populacao[chr][celula])].is_grande;
+				bool fardo_no_corte_is_grande = fardos[__categoria(populacao[chr][corte])].is_grande;
 
 				// Regra: como um fardo grande possui o mesmo tamanho do bloco,
 				// um fardo pequeno na mesma coluna mostra que o fardo grande está sendo cortado
-				if (tamanho_fardo_no_corte == "pequeno" && tamanho_fardo_na_iteracao == "grande")
+				if ((!fardo_no_corte_is_grande) && fardo_na_iteracao_is_grande)
 					return true;
 			}
 		}
@@ -290,11 +290,11 @@ void ga::init() {
 	vector<string> grandes, pequenos;
 
 	for (unsigned int i = 0; i < fardos.size(); i++) {
-		string tamanho = fardos[i].tamanho;
+		bool is_grande = fardos[i].is_grande;
 		int qtdade = fardos[i].qtdade;
 
 		for (int j = 0; j < qtdade; j++) {
-			if (tamanho == "pequeno")
+			if (!is_grande)
 				idx++, pequenos.push_back(to_string(idx) + 'a');
 			else
 				idx++, grandes.push_back(to_string(idx) + 'a');
@@ -315,14 +315,14 @@ void ga::init() {
 	}
 
 	if (pequenos_fantasmas > 0) {
-		fardos.push_back({ pequenos_fantasmas, "NDA", "NDA", "pequeno", "NDA", true });
+		fardos.push_back({ "NDA", "NDA", "NDA", pequenos_fantasmas, false, true });
 
 		for (int j = 0; j < pequenos_fantasmas; j++)
 				idx++, pequenos.push_back(to_string(idx) + 'a');
 	}
 
 	if (grandes_fantasmas > 0) {
-		fardos.push_back({ grandes_fantasmas, "NDA", "NDA", "grande", "NDA", true });
+		fardos.push_back({ "NDA", "NDA","NDA", grandes_fantasmas, true, true });
 
 		for (int j = 0; j < grandes_fantasmas; j++)
 				idx++, grandes.push_back(to_string(idx) + 'a');
@@ -371,7 +371,7 @@ void ga::fitness() {
 
 			// Armazenando espaço (em colunas) ocupado por cada categoria
 			if (populacao[individuo][celula].back() == 'a') {
-				if (fardos[categoria].tamanho == "grande")
+				if (fardos[categoria].is_grande)
 					ponderado[categoria] += 3.0;
 				else
 					ponderado[categoria] += 1.0;
@@ -439,7 +439,7 @@ void ga::cruzamento() {
 				auto iterador = find(filho.begin() + cortes.inf, filho.begin() + cortes.sup, fardo);  // O fardo do pai já está alocado no filho?
 
 				if (iterador == filho.begin() + cortes.sup) {  // Se não,
-					if (fardos[__categoria(fardo)].tamanho == "pequeno")
+					if (!fardos[__categoria(fardo)].is_grande)
 						pequenos.push_back(fardo);
 					else
 						grandes.push_back(fardo);

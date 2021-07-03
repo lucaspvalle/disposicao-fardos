@@ -2,11 +2,11 @@
 
 // Estrutura de dados para armazenamento de input via planilha
 typedef struct {
-	int qtdade;					// Quantidade de fardos a serem misturados
 	std::string box;			// Box de localização dos fardos no estoque da empresa
 	std::string procedencia;	// Procedência (origem) dos fardos
-	std::string tamanho;		// Tamanho dos fardos (pequenos ou grandes)
 	std::string cor;			// Cor dos fardos (branco, creme, ...)
+	int qtdade;					// Quantidade de fardos a serem misturados
+	bool is_grande;				// Tamanho dos fardos (pequenos ou grandes)
 	bool fantasma;				// Fardos de apoio à construção da matriz (mas que não existem)
 } __input__;
 
