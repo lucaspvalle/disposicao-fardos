@@ -70,29 +70,28 @@ void ga::escrever_csv(string diretorio) {
 
 		int posicao = 0;
 		for (string fardo : vencedor) {  // Iterando célula a célula da matriz
-			if (!fardo.empty()) {
 
-				int categoria = __categoria(fardo);
+			int categoria = __categoria(fardo);
 
-				string procedencia = fardos[categoria].procedencia;
-				string box = fardos[categoria].box;
-				string cor = fardos[categoria].cor;
-				bool is_grande = fardos[categoria].is_grande;
-				bool fantasma = fardos[categoria].fantasma;
+			string procedencia = fardos[categoria].procedencia;
+			string box = fardos[categoria].box;
+			string cor = fardos[categoria].cor;
+			bool is_grande = fardos[categoria].is_grande;
+			bool fantasma = fardos[categoria].fantasma;
 
-				if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
-					if (!fantasma)
-						arquivo << procedencia << " (" << cor << "),";
-					else
-						arquivo << "NDA,";
-				}
-				else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
-					if (is_grande)
-						arquivo << "2" << ',';
-					else
-						arquivo << "1" << ',';
-				}
+			if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
+				if (!fantasma)
+					arquivo << procedencia << " (" << cor << "),";
+				else
+					arquivo << "NDA,";
 			}
+			else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
+				if (is_grande)
+					arquivo << "2" << ',';
+				else
+					arquivo << "1" << ',';
+			}
+
 			if (((posicao - 3) % linhas) == 0)  // Quebra de linha do arquivo quando estiver na 4ª linha da matriz
 				arquivo << "\n";
 
@@ -114,17 +113,8 @@ Funções de apoio
 int ga::__categoria(string fardo) {
 
 	// Exemplo de string: "123b"
-	fardo.pop_back();  // Retira o último caracter ("b")
-	int id = stoi(fardo);  // Converte a string para inteiro
-
-	int cumsum = 0;
-	for (unsigned int tipo = 0; tipo < fardos.size(); tipo++) {
-		cumsum += fardos[tipo].qtdade;
-
-		if (id <= cumsum)
-			return tipo;
-	}
-	return 0;
+	fardo.pop_back();		// Retira o último caracter ("b")
+	return stoi(fardo);		// Retorna a string transformada em inteiro ("123" para 123)
 }
 
 double ga::__faixas(int distancia) {
@@ -215,6 +205,13 @@ vector<string> ga::__preenchimento(vector<string> filho, vector<string> pequenos
 	string variantes = { "abc" };
 	int coluna_iterada = corte / linhas, linha_iterada = 0;
 
+	// Misturando a ordem de fardos alocados
+	std::random_device rd;
+	std::mt19937 g(rd());
+
+	shuffle(pequenos.begin(), pequenos.end(), g);
+	shuffle(grandes.begin(), grandes.end(), g);
+
 	while (!grandes.empty()) {
 		bool continua = true;
 		int celula_inicial = linha_iterada + coluna_iterada * linhas;
@@ -286,18 +283,17 @@ Funções do algoritmo genético
 
 void ga::init() {
 
-	int idx = 0;
 	vector<string> grandes, pequenos;
 
-	for (unsigned int i = 0; i < fardos.size(); i++) {
-		bool is_grande = fardos[i].is_grande;
-		int qtdade = fardos[i].qtdade;
+	for (unsigned int idx = 0; idx < fardos.size(); idx++) {
+		bool is_grande = fardos[idx].is_grande;
+		int qtdade = fardos[idx].qtdade;
 
 		for (int j = 0; j < qtdade; j++) {
 			if (!is_grande)
-				idx++, pequenos.push_back(to_string(idx) + 'a');
+				pequenos.push_back(to_string(idx) + 'a');
 			else
-				idx++, grandes.push_back(to_string(idx) + 'a');
+				grandes.push_back(to_string(idx) + 'a');
 		}
 	}
 
@@ -316,16 +312,18 @@ void ga::init() {
 
 	if (pequenos_fantasmas > 0) {
 		fardos.push_back({ "NDA", "NDA", "NDA", pequenos_fantasmas, false, true });
+		int idx = fardos.size() - 1;
 
 		for (int j = 0; j < pequenos_fantasmas; j++)
-				idx++, pequenos.push_back(to_string(idx) + 'a');
+			pequenos.push_back(to_string(idx) + 'a');
 	}
 
 	if (grandes_fantasmas > 0) {
 		fardos.push_back({ "NDA", "NDA","NDA", grandes_fantasmas, true, true });
+		int idx = fardos.size() - 1;
 
 		for (int j = 0; j < grandes_fantasmas; j++)
-				idx++, grandes.push_back(to_string(idx) + 'a');
+			grandes.push_back(to_string(idx) + 'a');
 	}
 
 	// Calculando o tamanho necessário da matriz para acomodar todos os fardos
@@ -335,24 +333,16 @@ void ga::init() {
 	// Inicializando a população com indivíduos de tamanho pré-definido
 	string2d populacao(tamanho_populacao, vector<string>(tamanho_matriz, ""));
 
-	std::random_device rd;
-	std::mt19937 g(rd());
-
-	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
-
-		// Misturando a ordem de fardos alocados
-		shuffle(pequenos.begin(), pequenos.end(), g);
-		shuffle(grandes.begin(), grandes.end(), g);
-
+	for (int individuo = 0; individuo < tamanho_populacao; individuo++)
 		populacao[individuo] = __preenchimento(populacao[individuo], pequenos, grandes);
-	}
+
 	ga::populacao = populacao;
 }
 
 void ga::fitness() {
 
 	const int classes = static_cast<const int>(fardos.size());  // Quantidade de categorias de fardos
-	vector<double> valores(tamanho_populacao, 0.0);  // Valor fitness de cada indivíduo
+	vector<double> valores(tamanho_populacao, 0.0);				// Valor fitness de cada indivíduo
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
 		vector<double> ponderado(classes, 0.0);
@@ -416,17 +406,19 @@ void ga::cruzamento() {
 
 	string2d linhagem;
 
-	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
+	for (vector<string> individuo : populacao) {
 
+		int pai = selecao(), mae = selecao();
 		vector<string> filho(tamanho_matriz, ""), pequenos, grandes;
-		int pai = selecao(), mae = selecao();  // Genitores para a linhagem
 
 		double numero_aleatorio = rand() / (double)RAND_MAX;
+
 		if (numero_aleatorio >= probabilidade_cruzamento) {
 			if (fitval[pai] >= fitval[mae])
 				linhagem.push_back(populacao[pai]);
 			else
 				linhagem.push_back(populacao[mae]);
+			
 			continue;  // Pula a execução de cruzamento
 		}
 
@@ -434,21 +426,28 @@ void ga::cruzamento() {
 		limites cortes = __gerar_corte(colunas, mae);
 		copy(populacao[mae].begin() + cortes.inf, populacao[mae].begin() + cortes.sup, filho.begin() + cortes.inf);
 
-		for (string fardo : populacao[pai]) {
-			if (fardo.back() == 'a') {  // Caso o fardo esteja em sua posição inicial,
-				auto iterador = find(filho.begin() + cortes.inf, filho.begin() + cortes.sup, fardo);  // O fardo do pai já está alocado no filho?
+		// Armazena quantos fardos de cada categoria já foram alocados no filho
+		vector<int> contagem(fardos.size(), 0);
 
-				if (iterador == filho.begin() + cortes.sup) {  // Se não,
-					if (!fardos[__categoria(fardo)].is_grande)
-						pequenos.push_back(fardo);
-					else
-						grandes.push_back(fardo);
-				}
+		for (string fardo : filho) {
+			if (!fardo.empty())
+				if (fardo.back() == 'a')
+					contagem[__categoria(fardo)] += 1;
+		}
+		
+		for (int idx = 0; idx < contagem.size(); idx++) {
+			int faltantes = fardos[idx].qtdade - contagem[idx];
+
+			for (int qtd = 0; qtd < faltantes; qtd++) {
+				if (fardos[idx].is_grande)
+					grandes.push_back(to_string(idx) + 'a');
+				else
+					pequenos.push_back(to_string(idx) + 'a');
 			}
 		}
+
 		// Popula o filho com a informação genética do pai fora da região de corte
 		filho = __preenchimento(filho, pequenos, grandes, cortes.sup);
-
 		linhagem.push_back(filho);
 	}
 	ga::populacao = linhagem;
@@ -457,6 +456,7 @@ void ga::cruzamento() {
 void ga::mutacao() {
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
+
 		double numero_aleatorio = rand() / (double)RAND_MAX;
 
 		if (numero_aleatorio <= probabilidade_mutacao) {
@@ -470,7 +470,8 @@ void ga::mutacao() {
 
 			// Swap nos intervalos dos cortes inferior e superior de acordo com o tamanho do bloco de troca
 			const int tamanho = bloco * linhas;
-			swap_ranges(populacao[individuo].begin() + cortes.inf, populacao[individuo].begin() + cortes.inf + tamanho, populacao[individuo].begin() + cortes.sup);
+			swap_ranges(populacao[individuo].begin() + cortes.inf, populacao[individuo].begin() + cortes.inf + tamanho,
+						populacao[individuo].begin() + cortes.sup);
 		}
 	}
 }
