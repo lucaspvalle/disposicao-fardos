@@ -26,4 +26,6 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
-#include "ga.h"
+#include "Estruturas.h"
+#include "AlgoritmoGenetico.h"
+#include "Integrador.h"

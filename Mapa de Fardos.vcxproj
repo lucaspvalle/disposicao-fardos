@@ -140,15 +140,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="headers\Estruturas.h" />
     <ClInclude Include="headers\framework.h" />
-    <ClInclude Include="headers\ga.h" />
+    <ClInclude Include="headers\AlgoritmoGenetico.h" />
     <ClInclude Include="headers\main.h" />
     <ClInclude Include="headers\targetver.h" />
     <ClInclude Include="headers\resource.h" />
+    <ClInclude Include="headers\Integrador.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\Integrador.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="source\ga.cpp" />
+    <ClCompile Include="source\AlgoritmoGenetico.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Mapa de Fardos.rc" />

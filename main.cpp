@@ -65,43 +65,18 @@ void selecionar_arquivos(HWND hWnd, bool is_entrada) {
 
 void executar_algoritmo(HWND hWnd) {
 
-    const int tamanho_geracao = 250;
-
     srand(static_cast<unsigned int>(time(NULL)));
 
-    // Inicializando algoritmo genético
-    ga algoritmo;
+    Integrador integra(entrada, saida);
+    InputsFardos fardos = integra.input_csv();
 
-    // Verificação do diretório de entrada
-    if (entrada.empty()) {
-        entrada = "temp.csv";  // Assume diretório específico para busca
+    if (!fardos.empty()) {
 
-        MessageBoxA(
-            NULL,
-            (LPCSTR)"Estamos procurando por temp.csv na pasta do aplicativo para suprir a falta de um arquivo de entrada!",
-            (LPCSTR)"Disposição de Fardos",
-            MB_ICONWARNING);
-    }
-
-    // Verificação do diretório de saída
-    if (saida.empty()) {
-        saida = entrada;  // Assume diretório de entrada
-
-        MessageBoxA(
-            NULL,
-            (LPCSTR)"Sobrescreveremos o arquivo de entrada para suprir a falta de um arquivo de saida!",
-            (LPCSTR)"Disposição de Fardos",
-            MB_ICONWARNING);
-    }
-
-    // Continua apenas se a leitura não quebrar (retorna true ou false)
-    bool status = algoritmo.__ler_csv(entrada);
-
-    if (status) {
+        AlgoritmoGenetico algoritmo(fardos);
 
         // Construção da barra de progresso
         RECT janela;
-        GetClientRect(hWnd, &janela);  // Área da interface
+        GetClientRect(hWnd, &janela);                 // Área da interface
         int scroll = GetSystemMetrics(SM_CYVSCROLL);  // Barra de rolagem
         
         HWND progresso = CreateWindowEx(
@@ -109,20 +84,24 @@ void executar_algoritmo(HWND hWnd) {
             janela.left, janela.bottom - scroll, janela.right,
             scroll, hWnd, (HMENU)0, NULL, NULL);
 
-        SendMessage(progresso, PBM_SETRANGE, 0, MAKELPARAM(0, tamanho_geracao));  // Define o tamanho da barra
-        SendMessage(progresso, PBM_SETSTEP, (WPARAM)1, 0);                        // Define o incremeto da barra
+        SendMessage(progresso, PBM_SETRANGE, 0, MAKELPARAM(0, algoritmo.tamanho_geracao));  // Define o tamanho da barra
+        SendMessage(progresso, PBM_SETSTEP, (WPARAM)1, 0);                                  // Define o incremeto da barra
 
         algoritmo.init();
 
         // Iteração do algoritmo genético
-        for (int individuo = 0; individuo < tamanho_geracao; individuo++) {
+        for (int individuo = 0; individuo < algoritmo.tamanho_geracao; individuo++) {
             algoritmo.fitness();
             algoritmo.cruzamento();
             algoritmo.mutacao();
 
             SendMessage(progresso, PBM_STEPIT, 0, 0);  // Incrementa a barra
         }
-        algoritmo.escrever_csv(saida);
+
+        const int idx_maior_fitness = static_cast<const int>(std::max_element(algoritmo.valores_fitness.begin(), algoritmo.valores_fitness.end()) - algoritmo.valores_fitness.begin());
+        std::vector<std::string> vencedor = algoritmo.populacao[idx_maior_fitness];
+
+        integra.output_csv(vencedor, algoritmo.fardos);
 
         DestroyWindow(progresso);  // Libera a barra de progresso
     }

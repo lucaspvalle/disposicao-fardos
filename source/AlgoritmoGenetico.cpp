@@ -2,122 +2,17 @@
 using namespace std;
 
 /*
-Funções de integração
-*/
-
-bool ga::__ler_csv(string diretorio) {
-
-	ifstream arquivo;
-
-	arquivo.open(diretorio, ios::in);
-	if (arquivo.is_open()) {
-
-		info info_fardos;
-		const double criterio_peso = 220.0;
-
-		// Modelo do arquivo: "qtdade,procedencia,peso,box,cor\n"
-		string integridade, box, procedencia, peso, qtdade, cor;
-		bool is_grande, fantasma = false;
-
-		// Confere se a estrutura do arquivo está correta
-		getline(arquivo, integridade, ',');
-		if (integridade != "Quantidade") {
-			MessageBoxA(
-				NULL,
-				(LPCSTR)"A estrutura do arquivo de entrada não corresponde ao esperado!\nProcedimento desabilitado.",
-				(LPCSTR)"Disposição de Fardos",
-				MB_ICONWARNING);
-			return false;
-		}
-
-		// Deleta o cabeçalho
-		getline(arquivo, integridade);
-
-		while (getline(arquivo, qtdade, ',')) {
-			getline(arquivo, procedencia, ',');
-			getline(arquivo, peso, ',');
-			getline(arquivo, box, ',');
-			getline(arquivo, cor);
-
-			// Regra: caso o peso seja menor do que o critério, é classificado como pequeno
-			if (stod(peso) < criterio_peso)
-				is_grande = false;
-			else
-				is_grande = true;
-
-			info_fardos.push_back({ box, procedencia, cor, stoi(qtdade), is_grande, fantasma });
-		}
-		arquivo.close();
-
-		ga::fardos = info_fardos;
-		return true;
-	}
-	else {
-		MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
-		return false;
-	}
-}
-
-void ga::escrever_csv(string diretorio) {
-
-	const int idx_maior_fitness = static_cast<const int>(max_element(fitval.begin(), fitval.end()) - fitval.begin());
-	vector<string> vencedor = populacao[idx_maior_fitness];
-
-	ofstream arquivo;
-
-	arquivo.open(diretorio, ios::trunc);
-	if (arquivo.is_open()) {
-
-		int posicao = 0;
-		for (string fardo : vencedor) {  // Iterando célula a célula da matriz
-
-			int categoria = __categoria(fardo);
-
-			string procedencia = fardos[categoria].procedencia;
-			string box = fardos[categoria].box;
-			string cor = fardos[categoria].cor;
-			bool is_grande = fardos[categoria].is_grande;
-			bool fantasma = fardos[categoria].fantasma;
-
-			if (fardo.back() == 'a') {  // Escrever apenas para a primeira ocorrência do fardo na matriz
-				if (!fantasma)
-					arquivo << procedencia << " (" << cor << "),";
-				else
-					arquivo << "NDA,";
-			}
-			else {  // Identificação do tamanho do fardo para a construção do mapa em Excel
-				if (is_grande)
-					arquivo << "2" << ',';
-				else
-					arquivo << "1" << ',';
-			}
-
-			if (((posicao - 3) % linhas) == 0)  // Quebra de linha do arquivo quando estiver na 4ª linha da matriz
-				arquivo << "\n";
-
-			posicao++;
-		}
-		arquivo.close();
-	}
-	else {
-		MessageBoxA(NULL, (LPCSTR)"Arquivo não encontrado!", (LPCSTR)"Disposição de Fardos", MB_ICONWARNING);
-	}
-	MessageBoxA(NULL, (LPCSTR)"Algoritmo executado com sucesso!", (LPCSTR)"Disposição de Fardos", MB_ICONINFORMATION);
-}
-
-
-/*
 Funções de apoio
 */
 
-int ga::__categoria(string fardo) {
+int AlgoritmoGenetico::__categoria(string fardo) {
 
 	// Exemplo de string: "123b"
 	fardo.pop_back();		// Retira o último caracter ("b")
 	return stoi(fardo);		// Retorna a string transformada em inteiro ("123" para 123)
 }
 
-double ga::__faixas(int distancia) {
+double AlgoritmoGenetico::__faixas(int distancia) {
 
 	const double dist = static_cast<const double>(distancia);
 	const double col = static_cast<const double>(colunas);
@@ -137,7 +32,7 @@ double ga::__faixas(int distancia) {
 	return 0.0;
 }
 
-bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {
+bool AlgoritmoGenetico::__verifica_limites(int corte, int chr, bool checar_bloco = false) {
 
 	if (!checar_bloco) {  // Não verificar blocos
 		for (int i = 0; i < linhas; i++) {
@@ -169,7 +64,7 @@ bool ga::__verifica_limites(int corte, int chr, bool checar_bloco = false) {
 	return false;  // Quebra o loop caso nenhum fardo estiver sendo cortado ao meio
 }
 
-limites ga::__gerar_corte(int range, int chr, bool checar_bloco = false) {
+ZonasDeCorte AlgoritmoGenetico::__gerar_corte(int range, int chr, bool checar_bloco = false) {
 
 	int corte_inf = 0, corte_sup = 0;
 
@@ -200,7 +95,7 @@ limites ga::__gerar_corte(int range, int chr, bool checar_bloco = false) {
 	return { corte_inf, corte_sup };
 }
 
-vector<string> ga::__preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte = 0) {
+vector<string> AlgoritmoGenetico::__preenchimento(vector<string> filho, vector<string> pequenos, vector<string> grandes, int corte = 0) {
 
 	string variantes = { "abc" };
 	int coluna_iterada = corte / linhas, linha_iterada = 0;
@@ -276,12 +171,11 @@ vector<string> ga::__preenchimento(vector<string> filho, vector<string> pequenos
 	return filho;
 }
 
-
 /*
 Funções do algoritmo genético
 */
 
-void ga::init() {
+void AlgoritmoGenetico::init() {
 
 	vector<string> grandes, pequenos;
 
@@ -312,7 +206,7 @@ void ga::init() {
 
 	if (pequenos_fantasmas > 0) {
 		fardos.push_back({ "NDA", "NDA", "NDA", pequenos_fantasmas, false, true });
-		int idx = fardos.size() - 1;
+		int idx = static_cast<const int>(fardos.size()) - 1;
 
 		for (int j = 0; j < pequenos_fantasmas; j++)
 			pequenos.push_back(to_string(idx) + 'a');
@@ -320,15 +214,15 @@ void ga::init() {
 
 	if (grandes_fantasmas > 0) {
 		fardos.push_back({ "NDA", "NDA","NDA", grandes_fantasmas, true, true });
-		int idx = fardos.size() - 1;
+		int idx = static_cast<const int>(fardos.size()) - 1;
 
 		for (int j = 0; j < grandes_fantasmas; j++)
 			grandes.push_back(to_string(idx) + 'a');
 	}
 
 	// Calculando o tamanho necessário da matriz para acomodar todos os fardos
-	ga::tamanho_matriz = contagem_pequenos * 2 + contagem_grandes * 3;
-	ga::colunas = static_cast<int>(ceil(tamanho_matriz / linhas));
+	AlgoritmoGenetico::tamanho_matriz = contagem_pequenos * 2 + contagem_grandes * 3;
+	AlgoritmoGenetico::colunas = static_cast<int>(ceil(tamanho_matriz / linhas));
 
 	// Inicializando a população com indivíduos de tamanho pré-definido
 	string2d populacao(tamanho_populacao, vector<string>(tamanho_matriz, ""));
@@ -336,10 +230,10 @@ void ga::init() {
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++)
 		populacao[individuo] = __preenchimento(populacao[individuo], pequenos, grandes);
 
-	ga::populacao = populacao;
+	AlgoritmoGenetico::populacao = populacao;
 }
 
-void ga::fitness() {
+void AlgoritmoGenetico::fitness() {
 
 	const int classes = static_cast<const int>(fardos.size());  // Quantidade de categorias de fardos
 	vector<double> valores(tamanho_populacao, 0.0);				// Valor fitness de cada indivíduo
@@ -386,23 +280,23 @@ void ga::fitness() {
 			}
 		}
 	}
-	ga::fitval = valores;
+	AlgoritmoGenetico::valores_fitness = valores;
 }
 
-int ga::selecao() {
+int AlgoritmoGenetico::selecao() {
 
 	int vencedor = rand() % tamanho_populacao, desafiante = rand() % tamanho_populacao;
 
 	while (vencedor == desafiante)
 		desafiante = rand() % tamanho_populacao;
 
-	if (fitval[desafiante] >= fitval[vencedor])  // Quem possuir MAIOR valor fitness, vence
+	if (valores_fitness[desafiante] >= valores_fitness[vencedor])  // Quem possuir MAIOR valor fitness, vence
 		vencedor = desafiante;
 
 	return vencedor;
 }
 
-void ga::cruzamento() {
+void AlgoritmoGenetico::cruzamento() {
 
 	string2d linhagem;
 
@@ -414,7 +308,7 @@ void ga::cruzamento() {
 		double numero_aleatorio = rand() / (double)RAND_MAX;
 
 		if (numero_aleatorio >= probabilidade_cruzamento) {
-			if (fitval[pai] >= fitval[mae])
+			if (valores_fitness[pai] >= valores_fitness[mae])
 				linhagem.push_back(populacao[pai]);
 			else
 				linhagem.push_back(populacao[mae]);
@@ -423,7 +317,7 @@ void ga::cruzamento() {
 		}
 
 		// Popula o filho com a informação genética da mãe na região de corte
-		limites cortes = __gerar_corte(colunas, mae);
+		ZonasDeCorte cortes = __gerar_corte(colunas, mae);
 		copy(populacao[mae].begin() + cortes.inf, populacao[mae].begin() + cortes.sup, filho.begin() + cortes.inf);
 
 		// Armazena quantos fardos de cada categoria já foram alocados no filho
@@ -450,21 +344,21 @@ void ga::cruzamento() {
 		filho = __preenchimento(filho, pequenos, grandes, cortes.sup);
 		linhagem.push_back(filho);
 	}
-	ga::populacao = linhagem;
+	AlgoritmoGenetico::populacao = linhagem;
 }
 
-void ga::mutacao() {
+void AlgoritmoGenetico::mutacao() {
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
 
 		double numero_aleatorio = rand() / (double)RAND_MAX;
 
 		if (numero_aleatorio <= probabilidade_mutacao) {
-			limites cortes = __gerar_corte(colunas - bloco, individuo, true);
+			ZonasDeCorte cortes = __gerar_corte(colunas - bloco, individuo, true);
 
 			while (__verifica_limites(cortes.inf, individuo, true))
 				cortes.inf += linhas;
-
+				
 			while (__verifica_limites(cortes.sup, individuo, true))
 				cortes.sup += linhas;
 
