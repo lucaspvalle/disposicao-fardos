@@ -22,12 +22,11 @@ double AlgoritmoGenetico::__faixas(int distancia) {
 	if (dist >= col - largura)  // Minimiza a penalização da maior distância possível
 		return 1.0;
 
-	double intervalo = 0;
-	for (double i = 0; i < largura; i++) {
+	for (double i = 0.0; i < largura; i++) {
+		double intervalo = i * tamanho;
 
-		intervalo = i * tamanho;
-		if ((dist >= intervalo) && (dist < intervalo + tamanho))
-			return (i + 1.0);
+		if (dist < intervalo + tamanho)
+			return i + 1.0;
 	}
 	return 0.0;
 }
@@ -171,6 +170,23 @@ vector<string> AlgoritmoGenetico::__preenchimento(vector<string> filho, vector<s
 	return filho;
 }
 
+EstruturaDeFantasmas AlgoritmoGenetico::__preenchimento_fantasma(InputsFardos fardos, vector<string> individuo, bool is_grande) {
+
+	int contagem = static_cast<int>(individuo.size()), parametro = is_grande ? 2 : 3, fantasmas = 0;
+
+	while ((contagem % parametro != 0) || ((contagem / parametro) % 2 != 0))
+		fantasmas++, contagem += fantasmas;
+
+	if (fantasmas > 0) {
+		fardos.push_back({ "NDA", "NDA", "NDA", fantasmas, is_grande, true });
+		
+		int idx = static_cast<const int>(fardos.size()) - 1;
+		for (int j = 0; j < fantasmas; j++)
+			individuo.push_back(to_string(idx) + 'a');
+	}
+	return { fardos, individuo };
+}
+
 /*
 Funções do algoritmo genético
 */
@@ -191,37 +207,15 @@ void AlgoritmoGenetico::init() {
 		}
 	}
 
-	// Criando fardos fantasmas para melhor aproveitamento da matriz (se necessário)
-	int contagem_pequenos = static_cast<int>(pequenos.size()), pequenos_fantasmas = 0;
-	while ((contagem_pequenos % 3 != 0) || ((contagem_pequenos / 3) % 2 != 0)) {
-		pequenos_fantasmas++;
-		contagem_pequenos += pequenos_fantasmas;
-	}
+	// Criando fardos fantasmas para melhor aproveitamento da matriz (se necessário)	
+	EstruturaDeFantasmas fantasmas = __preenchimento_fantasma(fardos, pequenos, false);
+	fardos = fantasmas.fardos, pequenos = fantasmas.individuo;
 
-	int contagem_grandes = static_cast<int>(grandes.size()), grandes_fantasmas = 0;
-	while ((contagem_grandes % 2 != 0) || ((contagem_grandes / 2) % 2 != 0)) {
-		grandes_fantasmas++;
-		contagem_grandes += grandes_fantasmas;
-	}
-
-	if (pequenos_fantasmas > 0) {
-		fardos.push_back({ "NDA", "NDA", "NDA", pequenos_fantasmas, false, true });
-		int idx = static_cast<const int>(fardos.size()) - 1;
-
-		for (int j = 0; j < pequenos_fantasmas; j++)
-			pequenos.push_back(to_string(idx) + 'a');
-	}
-
-	if (grandes_fantasmas > 0) {
-		fardos.push_back({ "NDA", "NDA","NDA", grandes_fantasmas, true, true });
-		int idx = static_cast<const int>(fardos.size()) - 1;
-
-		for (int j = 0; j < grandes_fantasmas; j++)
-			grandes.push_back(to_string(idx) + 'a');
-	}
+	fantasmas = __preenchimento_fantasma(fardos, grandes, true);
+	fardos = fantasmas.fardos, grandes = fantasmas.individuo;
 
 	// Calculando o tamanho necessário da matriz para acomodar todos os fardos
-	AlgoritmoGenetico::tamanho_matriz = contagem_pequenos * 2 + contagem_grandes * 3;
+	AlgoritmoGenetico::tamanho_matriz = static_cast<int>(pequenos.size()) * 2 + static_cast<int>(grandes.size()) * 3;
 	AlgoritmoGenetico::colunas = static_cast<int>(ceil(tamanho_matriz / linhas));
 
 	// Inicializando a população com indivíduos de tamanho pré-definido
@@ -237,47 +231,38 @@ void AlgoritmoGenetico::fitness() {
 
 	const int classes = static_cast<const int>(fardos.size());  // Quantidade de categorias de fardos
 	vector<double> valores(tamanho_populacao, 0.0);				// Valor fitness de cada indivíduo
+	double col = static_cast<double>(colunas);					// Apenas transformando a quantidade de colunas em double
 
 	for (int individuo = 0; individuo < tamanho_populacao; individuo++) {
-		vector<double> ponderado(classes, 0.0);
-		vector<vector<int>> localizacao(classes);  // Localização de cada tipo de fardo na matriz
+		vector<double> fitness_por_categoria(classes, 0.0), colunas_ocupadas(classes, 0.0), ocupacao_ideal(classes, 0.0);
+		vector<int> ultima_localizacao(classes, -1), localizacao_atual(classes);
 
 		for (int celula = 0; celula < tamanho_matriz; celula++) {
 			int coluna = celula / linhas;
 			int categoria = __categoria(populacao[individuo][celula]);
 
-			// Condição para inserir colunas repetidas no vetor
-			if (localizacao[categoria].size() == 0)  // Necessário pois não é possível obter .back() de um vetor vazio
-				localizacao[categoria].push_back(coluna);
+			localizacao_atual[categoria] = coluna;
 
-			if (localizacao[categoria].back() != coluna)
-				localizacao[categoria].push_back(coluna);
-
-			// Armazenando espaço (em colunas) ocupado por cada categoria
-			if (populacao[individuo][celula].back() == 'a') {
-				if (fardos[categoria].is_grande)
-					ponderado[categoria] += 3.0;
-				else
-					ponderado[categoria] += 1.0;
+			if (ultima_localizacao[categoria] >= 0) {
+				int distancia = localizacao_atual[categoria] - ultima_localizacao[categoria];
+				fitness_por_categoria[categoria] += (distancia > 0) ? __faixas(distancia) : 0.0;
 			}
+
+			// A ocupação ideal guarda a ocupação máxima dos fardos em colunas da matriz
+			if (populacao[individuo][celula].back() == 'a')
+				ocupacao_ideal[categoria] += fardos[categoria].is_grande ? 3.0 : 1.0;
+
+			// A ocupação atual guarda quantas colunas foram de fato aproveitadas
+			if (ultima_localizacao[categoria] != localizacao_atual[categoria])
+				colunas_ocupadas[categoria]++;
+
+			ultima_localizacao[categoria] = coluna;
 		}
-
+		
 		for (int categoria = 0; categoria < classes; categoria++) {
-			if (localizacao[categoria].size() > 1) {  // Há distância para cálculo apenas se o fardo ocupar mais de duas colunas
-
-				double col = static_cast<double>(colunas);
-				double espaco_ocupado = static_cast<double>(localizacao[categoria].size());
-
-				// Penalização por % de colunas ocupadas
-				double peso = espaco_ocupado / min(col, ponderado[categoria]);
-
-				for (int coluna_iterada = 0; coluna_iterada < localizacao[categoria].size() - 1; coluna_iterada++) {
-					int proxima_coluna_iterada = coluna_iterada + 1;
-
-					int distancia = localizacao[categoria][proxima_coluna_iterada] - localizacao[categoria][coluna_iterada];
-					valores[individuo] += peso * __faixas(distancia);
-				}
-			}
+			// A função fitness penaliza a baixa dispersão de fardos em colunas da matriz
+			double peso = colunas_ocupadas[categoria] / min(col, ocupacao_ideal[categoria]);
+			valores[individuo] += peso * fitness_por_categoria[categoria];
 		}
 	}
 	AlgoritmoGenetico::valores_fitness = valores;

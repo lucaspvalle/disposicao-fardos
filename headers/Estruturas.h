@@ -21,3 +21,8 @@ typedef struct {
 	int inf;  // Zona inferior de corte
 	int sup;  // Zona superior de corte
 } ZonasDeCorte;
+
+typedef struct {
+	InputsFardos fardos;
+	std::vector<std::string> individuo;
+} EstruturaDeFantasmas;

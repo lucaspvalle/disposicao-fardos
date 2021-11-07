@@ -35,13 +35,21 @@ private:
 
 	/* Suporte de preenchimento de fardos para o operador OX
 	* 
-	* @param: indivíduo a ser preenchdio
+	* @param: indivíduo a ser preenchido
 	* @param: quantidade de fardos pequenos a serem inseridos
 	* @param: quantidade de fardos grandes a serem inseridos
 	* @param: local de início do preenchimento
 	* @return: filho com a sua matriz de fardos preenchida
 	*/
 	std::vector<std::string> __preenchimento(std::vector<std::string> filho, std::vector<std::string> pequenos, std::vector<std::string> grandes, int corte);
+
+	/* Gerador de fardos fantasmas para aproveitamento completo da matriz
+	
+	@param: fardos a serem misturados
+	@param: indivíduo a ser preenchido
+	@param: identificador de fardos grandes
+	*/
+	EstruturaDeFantasmas __preenchimento_fantasma(InputsFardos fardos, std::vector<std::string> individuo, bool is_grande);
 
 public:
 
